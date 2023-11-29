@@ -1,0 +1,14 @@
+[Desktop Entry]
+Categories=Network;
+Comment=Choose what browser to use for specific links
+Exec=/home/andy/.local/bin/poetry run choosr %u
+GenericName=Browser Choosr
+MimeType=x-scheme-handler/unknown;x-scheme-handler/about;text/html;text/xml;application/xhtml_xml;x-scheme-handler/http;x-scheme-handler/https;
+Name=Choosr
+NoDisplay=false
+Path=/home/andy/choosr
+StartupNotify=true
+Terminal=false
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=
