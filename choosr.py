@@ -8,6 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='log.txt')
 
 def launch_chrome(profile_dir, url=None):
+    # Profile dirs are in ~/.var/app/com.google.Chrome/config/google-chrome/
     command = ["/usr/bin/flatpak","run","--branch=stable","--arch=x86_64","--command=/app/bin/chrome","--file-forwarding","com.google.Chrome",f"--profile-directory={profile_dir}"]
     if url is not None:
         command.append(url)
