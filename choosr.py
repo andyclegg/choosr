@@ -33,7 +33,7 @@ def main():
 
     for match_glob in get_matchers("work.txt"):
         if fnmatch.fnmatch(domain, match_glob):
-            profile = "Profile 2"
+            profile = "Profile 5"
             logging.info(f"{url} matched {match_glob} -> {profile}")
 
     launch_chrome(profile, url=url)
