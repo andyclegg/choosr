@@ -226,10 +226,6 @@ class ProfileSelectorController(QObject):
                 'browserName': browser_name,
                 'profiles': browser_profiles
             })
-            
-            logging.info("Browser '%s' has %d profiles: %s", 
-                        browser_name, len(browser_profiles), 
-                        [p['name'] for p in browser_profiles])
         
         return result
     

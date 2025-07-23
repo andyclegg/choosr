@@ -5,8 +5,8 @@ import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: window
-    width: 800
-    height: 650
+    width: 900
+    height: 750
     
     property string currentUrl: ""
     property string currentDomain: ""
@@ -67,7 +67,7 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 80
+        height: 60
         color: cardColor
         
         // Drop shadow
@@ -79,22 +79,22 @@ Rectangle {
             color: shadowColor
         }
         
-        ColumnLayout {
+        RowLayout {
             anchors.fill: parent
             anchors.margins: 20
-            spacing: 5
+            spacing: 10
             
             Text {
                 text: "Choose a profile for:"
                 font.pixelSize: 16
                 font.weight: Font.Medium
                 color: textPrimaryColor
-                Layout.fillWidth: true
             }
             
             Text {
                 text: window.currentUrl
-                font.pixelSize: 14
+                font.pixelSize: 16
+                font.weight: Font.Bold
                 color: primaryColor
                 elide: Text.ElideMiddle
                 Layout.fillWidth: true
@@ -108,7 +108,7 @@ Rectangle {
         anchors.top: header.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 120
+        height: 110
         color: cardColor
         
         ColumnLayout {
@@ -117,7 +117,7 @@ Rectangle {
             spacing: 8
             
             Text {
-                text: "Pattern to save:"
+                text: "URL pattern to remember:"
                 font.pixelSize: 14
                 font.weight: Font.Medium
                 color: textPrimaryColor
@@ -218,7 +218,7 @@ Rectangle {
                             
                             // Browser header
                             Text {
-                                text: modelData.browserName + " (" + modelData.profiles.length + " profiles)"
+                                text: modelData.browserName
                                 font.pixelSize: 16
                                 font.weight: Font.Bold
                                 color: textPrimaryColor
