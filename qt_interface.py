@@ -154,24 +154,11 @@ class ProfileSelectorController(QObject):
         return self._result
     
     def _prepare_profile_data(self, profiles: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Convert profile configurations to QML-friendly format with icons."""
-        profile_data = []
+        """Convert profile configurations to browser-grouped QML-friendly format with icons."""
+        # Group profiles by browser
+        browser_groups = {}
         
-        # Sort profiles with private profiles last
-        regular_profiles = []
-        private_profiles = []
-        
-        for name, config in profiles.items():
-            if config.get('is_private', False):
-                private_profiles.append((name, config))
-            else:
-                regular_profiles.append((name, config))
-        
-        regular_profiles.sort(key=lambda x: x[0])
-        private_profiles.sort(key=lambda x: x[0])
-        sorted_profiles = regular_profiles + private_profiles
-        
-        for profile_name, profile_config in sorted_profiles:
+        for profile_name, profile_config in profiles.items():
             browser_type = profile_config.get('browser', 'unknown')
             is_private = profile_config.get('is_private', False)
             
@@ -202,7 +189,7 @@ class ProfileSelectorController(QObject):
                 background_color = profile_icon.background_color or "#4285F4"
                 text_color = profile_icon.text_color or "#FFFFFF"
             
-            profile_data.append({
+            profile_data = {
                 'name': profile_name,
                 'browser': browser_type,
                 'browserDisplayName': browser_display,
@@ -211,9 +198,40 @@ class ProfileSelectorController(QObject):
                 'backgroundColor': background_color,
                 'textColor': text_color,
                 'profileId': profile_config.get('profile_id', profile_name)
-            })
+            }
+            
+            # Group by browser display name
+            if browser_display not in browser_groups:
+                browser_groups[browser_display] = {
+                    'regular': [],
+                    'private': []
+                }
+            
+            if is_private:
+                browser_groups[browser_display]['private'].append(profile_data)
+            else:
+                browser_groups[browser_display]['regular'].append(profile_data)
         
-        return profile_data
+        # Sort profiles within each browser group and convert to QML-friendly format
+        result = []
+        for browser_name, groups in browser_groups.items():
+            # Sort regular profiles alphabetically
+            groups['regular'].sort(key=lambda x: x['name'].lower())
+            # Sort private profiles alphabetically
+            groups['private'].sort(key=lambda x: x['name'].lower())
+            # Combine with private profiles at the end
+            browser_profiles = groups['regular'] + groups['private']
+            
+            result.append({
+                'browserName': browser_name,
+                'profiles': browser_profiles
+            })
+            
+            logging.info("Browser '%s' has %d profiles: %s", 
+                        browser_name, len(browser_profiles), 
+                        [p['name'] for p in browser_profiles])
+        
+        return result
     
     @Slot(str, str, bool)
     def _on_profile_selected(self, profile_name: str, domain_pattern: str, save_choice: bool):

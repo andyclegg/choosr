@@ -196,97 +196,142 @@ Rectangle {
                 color: textPrimaryColor
             }
             
-            ScrollView {
+            RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                clip: true
+                spacing: 20
                 
-                GridView {
-                    id: profileList
+                // Create columns for each browser
+                Repeater {
                     model: window.profileData
-                    cellWidth: Math.floor(width / 2)
-                    cellHeight: 80
                     
-                    delegate: Rectangle {
-                        width: profileList.cellWidth - 8
-                        height: profileList.cellHeight - 8
-                        color: profileMouseArea.containsMouse ? hoverColor : "transparent"
-                        radius: 8
-                        border.color: window.selectedProfile === modelData.name ? primaryColor : "transparent"
-                        border.width: 2
+                    // Browser column
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumWidth: 350
+                        color: "transparent"
                         
-                        RowLayout {
+                        ColumnLayout {
                             anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 15
+                            spacing: 10
                             
-                            // Profile icon
-                            Rectangle {
-                                width: 40
-                                height: 40
-                                radius: 20
-                                color: modelData.backgroundColor || "#4285F4"
-                                
-                                // Browser icon or avatar
-                                Image {
-                                    anchors.centerIn: parent
-                                    width: 20
-                                    height: 20
-                                    source: modelData.browserIcon || ""
-                                    visible: source != ""
-                                    fillMode: Image.PreserveAspectFit
-                                }
-                                
-                                // Fallback to text avatar
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
-                                    font.pixelSize: 18
-                                    font.weight: Font.Bold
-                                    color: modelData.textColor || "#FFFFFF"
-                                    visible: !parent.children[0].visible
-                                }
-                            }
-                            
-                            // Profile info
-                            ColumnLayout {
+                            // Browser header
+                            Text {
+                                text: modelData.browserName + " (" + modelData.profiles.length + " profiles)"
+                                font.pixelSize: 16
+                                font.weight: Font.Bold
+                                color: textPrimaryColor
                                 Layout.fillWidth: true
-                                spacing: 2
-                                
-                                Text {
-                                    text: modelData.name || ""
-                                    font.pixelSize: 14
-                                    font.weight: Font.Medium
-                                    color: modelData.isPrivate ? errorColor : textPrimaryColor
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                }
-                                
-                                Text {
-                                    text: `[${modelData.browserDisplayName || modelData.browser || "Unknown"}]`
-                                    font.pixelSize: 12
-                                    color: textSecondaryColor
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                }
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             
-                            // Private mode indicator
+                            // Divider
                             Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: errorColor
-                                visible: modelData.isPrivate || false
+                                Layout.fillWidth: true
+                                height: 1
+                                color: dividerColor
                             }
-                        }
-                        
-                        MouseArea {
-                            id: profileMouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onClicked: {
-                                window.selectedProfile = modelData.name
+                            
+                            // Profile list for this browser
+                            ScrollView {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                clip: true
+                                
+                                Column {
+                                    width: parent.width
+                                    spacing: 8
+                                    
+                                    Repeater {
+                                        model: modelData.profiles
+                                        
+                                        Rectangle {
+                                            width: parent.width
+                                            height: 70
+                                            color: profileMouseArea.containsMouse ? hoverColor : "transparent"
+                                            radius: 8
+                                            border.color: window.selectedProfile === modelData.name ? primaryColor : "transparent"
+                                            border.width: 2
+                                            
+                                            RowLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 12
+                                                spacing: 15
+                                                
+                                                // Profile icon
+                                                Rectangle {
+                                                    width: 40
+                                                    height: 40
+                                                    radius: 20
+                                                    color: modelData.backgroundColor || "#4285F4"
+                                                    
+                                                    // Browser icon or avatar
+                                                    Image {
+                                                        anchors.centerIn: parent
+                                                        width: 20
+                                                        height: 20
+                                                        source: modelData.browserIcon || ""
+                                                        visible: source != ""
+                                                        fillMode: Image.PreserveAspectFit
+                                                    }
+                                                    
+                                                    // Fallback to text avatar
+                                                    Text {
+                                                        anchors.centerIn: parent
+                                                        text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
+                                                        font.pixelSize: 18
+                                                        font.weight: Font.Bold
+                                                        color: modelData.textColor || "#FFFFFF"
+                                                        visible: !parent.children[0].visible
+                                                    }
+                                                }
+                                                
+                                                // Profile info
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 2
+                                                    
+                                                    Text {
+                                                        text: modelData.name || ""
+                                                        font.pixelSize: 14
+                                                        font.weight: Font.Medium
+                                                        color: modelData.isPrivate ? errorColor : textPrimaryColor
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                    }
+                                                    
+                                                    // Private mode indicator (text instead of dot)
+                                                    Text {
+                                                        text: modelData.isPrivate ? "Private Mode" : ""
+                                                        font.pixelSize: 11
+                                                        color: errorColor
+                                                        visible: modelData.isPrivate || false
+                                                        Layout.fillWidth: true
+                                                    }
+                                                }
+                                                
+                                                // Private mode indicator dot
+                                                Rectangle {
+                                                    width: 8
+                                                    height: 8
+                                                    radius: 4
+                                                    color: errorColor
+                                                    visible: modelData.isPrivate || false
+                                                }
+                                            }
+                                            
+                                            MouseArea {
+                                                id: profileMouseArea
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                onClicked: {
+                                                    window.selectedProfile = modelData.name
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -417,17 +462,25 @@ Rectangle {
     
     // Initialize selected profile
     Component.onCompleted: {
-        if (profileData.length > 0) {
-            // Select first non-private profile by default
-            for (var i = 0; i < profileData.length; i++) {
-                if (!profileData[i].isPrivate) {
-                    selectedProfile = profileData[i].name
-                    break
+        // Find first non-private profile across all browsers
+        for (var b = 0; b < profileData.length; b++) {
+            var browserData = profileData[b]
+            if (browserData && browserData.profiles && browserData.profiles.length > 0) {
+                for (var i = 0; i < browserData.profiles.length; i++) {
+                    if (!browserData.profiles[i].isPrivate) {
+                        selectedProfile = browserData.profiles[i].name
+                        return
+                    }
                 }
             }
-            // If no non-private profiles, select first one
-            if (selectedProfile === "" && profileData.length > 0) {
-                selectedProfile = profileData[0].name
+        }
+        
+        // If no non-private profiles found, select first available profile
+        for (var b = 0; b < profileData.length; b++) {
+            var browserData = profileData[b]
+            if (browserData && browserData.profiles && browserData.profiles.length > 0) {
+                selectedProfile = browserData.profiles[0].name
+                return
             }
         }
     }
