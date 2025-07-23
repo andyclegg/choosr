@@ -16,13 +16,20 @@ logging.basicConfig(level=logging.INFO, filename='log.txt')
 
 def launch_chrome(profile_dir, url=None):
     """Launch Chrome with the specified profile directory and optional URL."""
-    command = [
-        "/usr/bin/google-chrome",
-        f"--profile-directory={profile_dir}"
-    ]
+    command = ["/usr/bin/google-chrome"]
+    
+    # Handle incognito mode (when profile_dir is None)
+    if profile_dir is None:
+        command.append("--incognito")
+        logging.info("Launching Chrome in incognito mode")
+    else:
+        command.append(f"--profile-directory={profile_dir}")
+        logging.info("Launching Chrome with profile directory: %s", profile_dir)
+    
     if url is not None:
         command.append(url)
-    logging.info("%s", str(command))
+    
+    logging.info("Command: %s", str(command))
     subprocess.run(command, check=False)
 
 def load_config():
@@ -193,14 +200,62 @@ def show_profile_selector(url, domain, profiles):
     profile_var = tk.StringVar()
     
     # Create radio buttons for each profile
-    for profile_name in sorted(profiles.keys()):
-        ttk.Radiobutton(
-            profile_container,
-            text=profile_name,
-            variable=profile_var,
-            value=profile_name,
-            padding="5"
-        ).pack(anchor="w", pady=2)
+    # Sort profiles with Chrome Incognito Mode always last
+    profile_names = list(profiles.keys())
+    regular_profiles = [name for name in profile_names if name != "Chrome Incognito Mode"]
+    regular_profiles.sort()
+    
+    # Add Chrome Incognito Mode at the end if it exists
+    if "Chrome Incognito Mode" in profile_names:
+        sorted_profiles = regular_profiles + ["Chrome Incognito Mode"]
+    else:
+        sorted_profiles = regular_profiles
+    
+    for profile_name in sorted_profiles:
+        # Use different styling for Chrome Incognito Mode
+        if profile_name == "Chrome Incognito Mode":
+            # Create a frame to hold both radio button and colored text
+            incognito_frame = ttk.Frame(profile_container)
+            incognito_frame.pack(anchor="w", pady=2, fill="x")
+            
+            radio_button = ttk.Radiobutton(
+                incognito_frame,
+                text="",  # Empty text, we'll add colored label separately
+                variable=profile_var,
+                value=profile_name,
+                padding="5"
+            )
+            radio_button.pack(side="left")
+            
+            # Add red colored label next to the radio button
+            incognito_label = tk.Label(
+                incognito_frame,
+                text=profile_name,
+                foreground="red",
+                font=('Arial', 9)
+            )
+            # Try to match the background color of the parent
+            try:
+                parent_bg = incognito_frame.cget("background")
+                incognito_label.configure(background=parent_bg)
+            except tk.TclError:
+                # If we can't get the background, use default
+                pass
+            incognito_label.pack(side="left", padx=(2, 0))
+            
+            # Make clicking the label also select the radio button
+            def select_incognito(event=None):
+                profile_var.set(profile_name)
+            incognito_label.bind("<Button-1>", select_incognito)
+        else:
+            radio_button = ttk.Radiobutton(
+                profile_container,
+                text=profile_name,
+                variable=profile_var,
+                value=profile_name,
+                padding="5"
+            )
+            radio_button.pack(anchor="w", pady=2)
     
     # Buttons
     button_frame = ttk.Frame(root, padding="10")
@@ -211,9 +266,9 @@ def show_profile_selector(url, domain, profiles):
     ttk.Button(button_frame, text="Launch", command=on_launch_only).pack(side="right", padx=(5, 0))
     ttk.Button(button_frame, text="Remember choice and launch", command=on_remember_and_launch).pack(side="right", padx=(5, 0))
     
-    # Set first profile as default
-    if profiles:
-        profile_var.set(list(sorted(profiles.keys()))[0])
+    # Set first profile as default (first in sorted order, not incognito)
+    if sorted_profiles:
+        profile_var.set(sorted_profiles[0])
     
     try:
         root.mainloop()
@@ -296,6 +351,12 @@ def init_config():
             'browser': 'chrome'
         }
     
+    # Add Chrome Incognito Mode as a special profile
+    config['browser_profiles']['Chrome Incognito Mode'] = {
+        'directory': None,
+        'browser': 'chrome'
+    }
+    
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
@@ -357,9 +418,13 @@ def handle_url(url):
     if selected_profile_name and selected_profile_name in config.get('browser_profiles', {}):
         profile_info = config['browser_profiles'][selected_profile_name]
         selected_profile_dir = profile_info.get('directory', 'Default')
-        logging.info("Using profile directory: %s", selected_profile_dir)
+        if selected_profile_dir is None:
+            logging.info("Using incognito mode")
+        else:
+            logging.info("Using profile directory: %s", selected_profile_dir)
     else:
         logging.info("No matching profile found, using Default")
+        selected_profile_dir = "Default"
 
     launch_chrome(selected_profile_dir, url=url)
 
