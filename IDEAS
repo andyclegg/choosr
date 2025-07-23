@@ -1,3 +1,5 @@
+Better icon
+
 Advanced Features
 * Source Application detection - is this possible?
 * Remember window position/size
@@ -6,5 +8,4 @@ Advanced Features
 
 Performance & UX
 * Background profile updates
-* Simplify UI - 'remember pattern' tickbox next to domain box, get rid of buttons and just double click on browser profiel to launch
-* Icon that looks like a mix of browser icons, or a globe with multiple arrows coming out to represent indirection
+* More keyboard navigation - highlight a profile, allow using arrows to navigate

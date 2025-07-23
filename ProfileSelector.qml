@@ -6,7 +6,49 @@ import Qt5Compat.GraphicalEffects
 Rectangle {
     id: window
     width: 900
-    height: 750
+    height: 650  // Reduced height since we removed button section
+    focus: true  // Enable focus to receive key events
+    
+    // Global keyboard event handling
+    Keys.onPressed: function(event) {
+        // Check for Ctrl modifier in any key press
+        if (event.modifiers & Qt.ControlModifier) {
+            window.ctrlKeyPressed = true
+        }
+        
+        // Handle Escape
+        if (event.key === Qt.Key_Escape) {
+            window.cancelled()
+            event.accepted = true
+            return
+        }
+        
+        // Handle Enter
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            if (window.selectedProfile !== "" && window.domainPattern.trim() !== "") {
+                window.profileSelected(window.selectedProfile, window.domainPattern.trim(), window.rememberPattern)
+            }
+            event.accepted = true
+            return
+        }
+        
+        // Handle Ctrl+0-9 shortcuts
+        if (event.modifiers & Qt.ControlModifier) {
+            var keyIndex = -1
+            if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+                keyIndex = event.key - Qt.Key_0
+                launchProfileByIndex(keyIndex)
+                event.accepted = true
+            }
+        }
+    }
+    
+    Keys.onReleased: function(event) {
+        // Reset Ctrl state when no modifiers are present
+        if (!(event.modifiers & Qt.ControlModifier)) {
+            window.ctrlKeyPressed = false
+        }
+    }
     
     property string currentUrl: ""
     property string currentDomain: ""
@@ -14,7 +56,15 @@ Rectangle {
     property string selectedProfile: ""
     property string domainPattern: ""
     property bool warningVisible: false
+    property bool rememberPattern: true
+    property bool ctrlKeyPressed: false
+    property var profileShortcuts: []  // Array to store first 10 profiles for shortcuts
     property string systemTheme: "light"
+    
+    // Watch for profileData changes and rebuild shortcuts
+    onProfileDataChanged: {
+        buildProfileShortcuts()
+    }
     
     signal profileSelected(string profileName, string domainPattern, bool saveChoice)
     signal cancelled()
@@ -123,31 +173,72 @@ Rectangle {
                 color: textPrimaryColor
             }
             
-            Rectangle {
+            RowLayout {
                 Layout.fillWidth: true
-                height: 40
-                color: inputBackgroundColor
-                border.color: domainInput.activeFocus ? primaryColor : dividerColor
-                border.width: domainInput.activeFocus ? 2 : 1
-                radius: 8
+                spacing: 12
                 
-                TextInput {
-                    id: domainInput
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    text: window.domainPattern
-                    font.pixelSize: 14
-                    color: textPrimaryColor
-                    selectByMouse: true
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 40
+                    color: inputBackgroundColor
+                    border.color: domainInput.activeFocus ? primaryColor : dividerColor
+                    border.width: domainInput.activeFocus ? 2 : 1
+                    radius: 8
                     
-                    onTextChanged: {
-                        window.domainPattern = text
-                        // Check if pattern matches current domain
-                        if (text.trim() !== "" && !matchesPattern(window.currentDomain, text.trim())) {
-                            window.warningVisible = true
-                        } else {
-                            window.warningVisible = false
+                    TextInput {
+                        id: domainInput
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: window.domainPattern
+                        font.pixelSize: 14
+                        color: textPrimaryColor
+                        selectByMouse: true
+                        focus: false  // Don't steal focus from global handler
+                        
+                        onTextChanged: {
+                            window.domainPattern = text
+                            // Check if pattern matches current domain
+                            if (text.trim() !== "" && !matchesPattern(window.currentDomain, text.trim())) {
+                                window.warningVisible = true
+                            } else {
+                                window.warningVisible = false
+                            }
                         }
+                    }
+                }
+                
+                RowLayout {
+                    spacing: 6
+                    
+                    CheckBox {
+                        id: rememberCheckbox
+                        checked: window.rememberPattern
+                        onCheckedChanged: window.rememberPattern = checked
+                        
+                        indicator: Rectangle {
+                            implicitWidth: 16
+                            implicitHeight: 16
+                            x: rememberCheckbox.leftPadding
+                            y: parent.height / 2 - height / 2
+                            radius: 2
+                            border.color: rememberCheckbox.checked ? primaryColor : dividerColor
+                            border.width: 2
+                            color: rememberCheckbox.checked ? primaryColor : "transparent"
+                            
+                            Text {
+                                text: "✓"
+                                font.pixelSize: 10
+                                color: "white"
+                                anchors.centerIn: parent
+                                visible: rememberCheckbox.checked
+                            }
+                        }
+                    }
+                    
+                    Text {
+                        text: "Remember"
+                        font.pixelSize: 12
+                        color: textPrimaryColor
                     }
                 }
             }
@@ -169,9 +260,8 @@ Rectangle {
         anchors.top: domainSection.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: buttonSection.top
+        anchors.bottom: parent.bottom
         anchors.margins: 20
-        anchors.bottomMargin: 10
         color: cardColor
         radius: 12
         
@@ -319,6 +409,23 @@ Rectangle {
                                                     color: errorColor
                                                     visible: modelData.isPrivate || false
                                                 }
+                                                
+                                                // Keyboard shortcut number (shown when Ctrl is pressed)
+                                                Rectangle {
+                                                    width: 24
+                                                    height: 24
+                                                    radius: 12
+                                                    color: primaryColor
+                                                    visible: window.ctrlKeyPressed && getProfileShortcutIndex(modelData.name) >= 0
+                                                    
+                                                    Text {
+                                                        anchors.centerIn: parent
+                                                        text: getProfileShortcutNumber(modelData.name)
+                                                        font.pixelSize: 12
+                                                        font.weight: Font.Bold
+                                                        color: "white"
+                                                    }
+                                                }
                                             }
                                             
                                             MouseArea {
@@ -327,6 +434,12 @@ Rectangle {
                                                 hoverEnabled: true
                                                 onClicked: {
                                                     window.selectedProfile = modelData.name
+                                                }
+                                                onDoubleClicked: {
+                                                    window.selectedProfile = modelData.name
+                                                    if (window.domainPattern.trim() !== "") {
+                                                        window.profileSelected(modelData.name, window.domainPattern.trim(), window.rememberPattern)
+                                                    }
                                                 }
                                             }
                                         }
@@ -337,118 +450,20 @@ Rectangle {
                     }
                 }
             }
+            
+            // Instructions
+            Text {
+                text: "Double-click a profile to launch • Hold Ctrl to show shortcuts (Ctrl+0-9) • Press Escape to cancel • Press Enter to launch selected profile"
+                font.pixelSize: 11
+                color: textSecondaryColor
+                horizontalAlignment: Text.AlignHCenter
+                Layout.fillWidth: true
+                Layout.topMargin: 10
+                wrapMode: Text.WordWrap
+            }
         }
     }
     
-    // Button section
-    Rectangle {
-        id: buttonSection
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 80
-        color: cardColor
-        
-        // Top border
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: 1
-            color: dividerColor
-        }
-        
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: 20
-            spacing: 15
-            
-            // Exit button
-            Button {
-                text: "Exit"
-                font.pixelSize: 14
-                Layout.preferredWidth: 100
-                Layout.preferredHeight: 40
-                
-                background: Rectangle {
-                    color: parent.pressed ? (isDarkTheme ? "#333333" : "#E0E0E0") : (parent.hovered ? hoverColor : "transparent")
-                    border.color: dividerColor
-                    border.width: 1
-                    radius: 8
-                }
-                
-                contentItem: Text {
-                    text: parent.text
-                    font: parent.font
-                    color: textPrimaryColor
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                
-                onClicked: window.cancelled()
-            }
-            
-            Item { Layout.fillWidth: true } // Spacer
-            
-            // Launch button
-            Button {
-                text: "Launch"
-                font.pixelSize: 14
-                Layout.preferredWidth: 120
-                Layout.preferredHeight: 40
-                enabled: window.selectedProfile !== "" && window.domainPattern.trim() !== ""
-                
-                background: Rectangle {
-                    color: parent.enabled ? (parent.pressed ? primaryDarkColor : (parent.hovered ? primaryColor : primaryColor)) : "#CCCCCC"
-                    radius: 8
-                    opacity: parent.enabled ? 1.0 : 0.6
-                }
-                
-                contentItem: Text {
-                    text: parent.text
-                    font: parent.font
-                    color: parent.enabled ? "white" : "#666666"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                
-                onClicked: {
-                    if (window.selectedProfile !== "" && window.domainPattern.trim() !== "") {
-                        window.profileSelected(window.selectedProfile, window.domainPattern.trim(), false)
-                    }
-                }
-            }
-            
-            // Remember and launch button
-            Button {
-                text: "Remember & Launch"
-                font.pixelSize: 14
-                Layout.preferredWidth: 160
-                Layout.preferredHeight: 40
-                enabled: window.selectedProfile !== "" && window.domainPattern.trim() !== ""
-                
-                background: Rectangle {
-                    color: parent.enabled ? (parent.pressed ? "#0288D1" : (parent.hovered ? accentColor : accentColor)) : "#CCCCCC"
-                    radius: 8
-                    opacity: parent.enabled ? 1.0 : 0.6
-                }
-                
-                contentItem: Text {
-                    text: parent.text
-                    font: parent.font
-                    color: parent.enabled ? "white" : "#666666"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                
-                onClicked: {
-                    if (window.selectedProfile !== "" && window.domainPattern.trim() !== "") {
-                        window.profileSelected(window.selectedProfile, window.domainPattern.trim(), true)
-                    }
-                }
-            }
-        }
-    }
     
     // Helper function for pattern matching (simplified)
     function matchesPattern(domain, pattern) {
@@ -460,28 +475,62 @@ Rectangle {
         return regex.test(domain)
     }
     
-    // Initialize selected profile
-    Component.onCompleted: {
-        // Find first non-private profile across all browsers
-        for (var b = 0; b < profileData.length; b++) {
+    // Get profile shortcut index (0-9, -1 if not in first 10)
+    function getProfileShortcutIndex(profileName) {
+        for (var i = 0; i < Math.min(window.profileShortcuts.length, 10); i++) {
+            if (window.profileShortcuts[i] === profileName) {
+                return i
+            }
+        }
+        return -1
+    }
+    
+    // Get profile shortcut number display (0-9)
+    function getProfileShortcutNumber(profileName) {
+        var index = getProfileShortcutIndex(profileName)
+        return index >= 0 ? index.toString() : ""
+    }
+    
+    // Launch profile by shortcut index
+    function launchProfileByIndex(index) {
+        if (index >= 0 && index < window.profileShortcuts.length && window.domainPattern.trim() !== "") {
+            var profileName = window.profileShortcuts[index]
+            window.selectedProfile = profileName
+            window.profileSelected(profileName, window.domainPattern.trim(), window.rememberPattern)
+        }
+    }
+    
+    // Build profile shortcuts array
+    function buildProfileShortcuts() {
+        var shortcuts = []
+        var selectedFound = false
+        
+        for (var b = 0; b < profileData.length && shortcuts.length < 10; b++) {
             var browserData = profileData[b]
             if (browserData && browserData.profiles && browserData.profiles.length > 0) {
-                for (var i = 0; i < browserData.profiles.length; i++) {
-                    if (!browserData.profiles[i].isPrivate) {
-                        selectedProfile = browserData.profiles[i].name
-                        return
+                for (var i = 0; i < browserData.profiles.length && shortcuts.length < 10; i++) {
+                    var profile = browserData.profiles[i]
+                    shortcuts.push(profile.name)
+                    
+                    // Select first non-private profile as default (only if none selected yet)
+                    if (!selectedFound && !profile.isPrivate && selectedProfile === "") {
+                        selectedProfile = profile.name
+                        selectedFound = true
                     }
                 }
             }
         }
         
-        // If no non-private profiles found, select first available profile
-        for (var b = 0; b < profileData.length; b++) {
-            var browserData = profileData[b]
-            if (browserData && browserData.profiles && browserData.profiles.length > 0) {
-                selectedProfile = browserData.profiles[0].name
-                return
-            }
+        window.profileShortcuts = shortcuts
+        
+        // If no non-private profile found and no profile selected, select first profile
+        if (!selectedFound && shortcuts.length > 0 && selectedProfile === "") {
+            selectedProfile = shortcuts[0]
         }
+    }
+    
+    // Initialize when component is completed
+    Component.onCompleted: {
+        buildProfileShortcuts()
     }
 }
