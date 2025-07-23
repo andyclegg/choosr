@@ -32,6 +32,31 @@ Rectangle {
             return
         }
         
+        // Handle Arrow Keys for navigation
+        if (event.key === Qt.Key_Up) {
+            navigateProfile("up")
+            event.accepted = true
+            return
+        }
+        
+        if (event.key === Qt.Key_Down) {
+            navigateProfile("down")
+            event.accepted = true
+            return
+        }
+        
+        if (event.key === Qt.Key_Left) {
+            navigateProfile("left")
+            event.accepted = true
+            return
+        }
+        
+        if (event.key === Qt.Key_Right) {
+            navigateProfile("right")
+            event.accepted = true
+            return
+        }
+        
         // Handle Ctrl+0-9 shortcuts
         if (event.modifiers & Qt.ControlModifier) {
             var keyIndex = -1
@@ -54,6 +79,7 @@ Rectangle {
     property string currentDomain: ""
     property var profileData: []
     property string selectedProfile: ""
+    property int selectedProfileIndex: 0  // Index for keyboard navigation
     property string domainPattern: ""
     property bool warningVisible: false
     property bool rememberPattern: true
@@ -434,9 +460,11 @@ Rectangle {
                                                 hoverEnabled: true
                                                 onClicked: {
                                                     window.selectedProfile = modelData.name
+                                                    window.selectedProfileIndex = findProfileIndex(modelData.name)
                                                 }
                                                 onDoubleClicked: {
                                                     window.selectedProfile = modelData.name
+                                                    window.selectedProfileIndex = findProfileIndex(modelData.name)
                                                     if (window.domainPattern.trim() !== "") {
                                                         window.profileSelected(modelData.name, window.domainPattern.trim(), window.rememberPattern)
                                                     }
@@ -453,7 +481,7 @@ Rectangle {
             
             // Instructions
             Text {
-                text: "Double-click a profile to launch • Hold Ctrl to show shortcuts (Ctrl+0-9) • Press Escape to cancel • Press Enter to launch selected profile"
+                text: "Use ↑↓←→ arrows to navigate • Press Enter to launch • Double-click to launch • Hold Ctrl to show shortcuts (Ctrl+0-9) • Press Escape to cancel"
                 font.pixelSize: 11
                 color: textSecondaryColor
                 horizontalAlignment: Text.AlignHCenter
@@ -496,14 +524,105 @@ Rectangle {
         if (index >= 0 && index < window.profileShortcuts.length && window.domainPattern.trim() !== "") {
             var profileName = window.profileShortcuts[index]
             window.selectedProfile = profileName
+            window.selectedProfileIndex = index
             window.profileSelected(profileName, window.domainPattern.trim(), window.rememberPattern)
         }
+    }
+    
+    // Navigate through profiles with arrow keys (2D grid navigation)
+    function navigateProfile(direction) {
+        if (window.profileShortcuts.length === 0) return
+        
+        var newIndex = window.selectedProfileIndex
+        
+        if (direction === "up" || direction === "down") {
+            // Vertical navigation - simple linear navigation
+            newIndex = window.selectedProfileIndex + (direction === "down" ? 1 : -1)
+            
+            // Wrap around
+            if (newIndex < 0) {
+                newIndex = window.profileShortcuts.length - 1
+            } else if (newIndex >= window.profileShortcuts.length) {
+                newIndex = 0
+            }
+        } else if (direction === "left" || direction === "right") {
+            // Horizontal navigation - move between browsers/columns
+            var currentProfile = window.profileShortcuts[window.selectedProfileIndex]
+            var currentBrowserIndex = -1
+            var currentProfileInBrowser = -1
+            var newBrowserIndex = -1
+            
+            // Find which browser and position the current profile is in
+            var profileIndex = 0
+            for (var b = 0; b < profileData.length; b++) {
+                var browserData = profileData[b]
+                if (browserData && browserData.profiles && browserData.profiles.length > 0) {
+                    for (var p = 0; p < browserData.profiles.length && profileIndex < window.profileShortcuts.length; p++) {
+                        if (window.profileShortcuts[profileIndex] === currentProfile) {
+                            currentBrowserIndex = b
+                            currentProfileInBrowser = p
+                            break
+                        }
+                        profileIndex++
+                    }
+                    if (currentBrowserIndex >= 0) break
+                }
+            }
+            
+            if (currentBrowserIndex >= 0) {
+                // Move to next/previous browser
+                newBrowserIndex = currentBrowserIndex + (direction === "right" ? 1 : -1)
+                
+                // Wrap around browsers
+                if (newBrowserIndex < 0) {
+                    newBrowserIndex = profileData.length - 1
+                } else if (newBrowserIndex >= profileData.length) {
+                    newBrowserIndex = 0
+                }
+                
+                // Find corresponding profile in new browser
+                var targetBrowserData = profileData[newBrowserIndex]
+                if (targetBrowserData && targetBrowserData.profiles && targetBrowserData.profiles.length > 0) {
+                    // Try to stay at same position, or go to last profile if new browser has fewer profiles
+                    var targetProfileInBrowser = Math.min(currentProfileInBrowser, targetBrowserData.profiles.length - 1)
+                    
+                    // Calculate the absolute index
+                    newIndex = 0
+                    for (var i = 0; i < newBrowserIndex; i++) {
+                        var browserProfiles = profileData[i]
+                        if (browserProfiles && browserProfiles.profiles) {
+                            newIndex += Math.min(browserProfiles.profiles.length, 10 - newIndex) // Max 10 profiles
+                        }
+                    }
+                    newIndex += targetProfileInBrowser
+                    
+                    // Ensure we don't exceed the shortcuts array
+                    if (newIndex >= window.profileShortcuts.length) {
+                        newIndex = window.profileShortcuts.length - 1
+                    }
+                }
+            }
+        }
+        
+        window.selectedProfileIndex = Math.max(0, Math.min(newIndex, window.profileShortcuts.length - 1))
+        window.selectedProfile = window.profileShortcuts[window.selectedProfileIndex]
+    }
+    
+    // Find index of profile by name
+    function findProfileIndex(profileName) {
+        for (var i = 0; i < window.profileShortcuts.length; i++) {
+            if (window.profileShortcuts[i] === profileName) {
+                return i
+            }
+        }
+        return 0
     }
     
     // Build profile shortcuts array
     function buildProfileShortcuts() {
         var shortcuts = []
         var selectedFound = false
+        var firstNonPrivateIndex = -1
         
         for (var b = 0; b < profileData.length && shortcuts.length < 10; b++) {
             var browserData = profileData[b]
@@ -512,9 +631,15 @@ Rectangle {
                     var profile = browserData.profiles[i]
                     shortcuts.push(profile.name)
                     
+                    // Find first non-private profile index
+                    if (firstNonPrivateIndex === -1 && !profile.isPrivate) {
+                        firstNonPrivateIndex = shortcuts.length - 1
+                    }
+                    
                     // Select first non-private profile as default (only if none selected yet)
                     if (!selectedFound && !profile.isPrivate && selectedProfile === "") {
                         selectedProfile = profile.name
+                        selectedProfileIndex = shortcuts.length - 1
                         selectedFound = true
                     }
                 }
@@ -526,6 +651,13 @@ Rectangle {
         // If no non-private profile found and no profile selected, select first profile
         if (!selectedFound && shortcuts.length > 0 && selectedProfile === "") {
             selectedProfile = shortcuts[0]
+            selectedProfileIndex = 0
+        }
+        
+        // If we have a non-private profile, prefer it
+        if (firstNonPrivateIndex >= 0 && !selectedFound) {
+            selectedProfile = shortcuts[firstNonPrivateIndex]
+            selectedProfileIndex = firstNonPrivateIndex
         }
     }
     
