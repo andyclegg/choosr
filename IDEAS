@@ -1,10 +1,17 @@
-Browser Support
-* Firefox
-  * also include incognito or similar
-
 Nicer choice window:
-* Use QML + Qt
+* Use QML + Qt instead of Tkinter
 * Display the profile picture / colouring that Chrome uses
 * General nicer layout
+* Better responsive design for many profiles
 
-Source Application detection - is this possible?
+Advanced Features
+* Source Application detection - is this possible?
+* Remember window position/size
+* Keyboard shortcuts in profile selector
+* Profile groups/categories
+
+Performance & UX
+* Faster profile discovery caching
+* Background profile updates
+* Startup time optimization
+* Better error handling and user feedback

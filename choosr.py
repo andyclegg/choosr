@@ -12,6 +12,7 @@ import yaml
 
 from browser import browser_registry, Profile
 from chrome import ChromeBrowser
+from firefox import FirefoxBrowser
 
 logging.basicConfig(level=logging.INFO, filename='log.txt')
 
@@ -20,7 +21,13 @@ def initialize_browsers():
     # Register Chrome browser
     chrome = ChromeBrowser()
     browser_registry.register(chrome)
-    logging.info("Registered browsers: %s", [b.display_name for b in browser_registry.get_available_browsers()])
+    
+    # Register Firefox browser
+    firefox = FirefoxBrowser()
+    browser_registry.register(firefox)
+    
+    available_browsers = browser_registry.get_available_browsers()
+    logging.info("Registered browsers: %s", [b.display_name for b in available_browsers])
 
 def launch_browser(profile_name, url=None):
     """Launch browser with the specified profile and optional URL."""
