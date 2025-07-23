@@ -12,6 +12,22 @@ from typing import List, Dict, Optional, Any
 
 
 @dataclass
+class ProfileIcon:
+    """Represents a profile icon with color and avatar information."""
+    avatar_icon: Optional[str] = None    # Icon identifier/path
+    background_color: Optional[str] = None  # Hex color code
+    text_color: Optional[str] = None     # Hex color for text
+    icon_data: Optional[bytes] = None    # Raw icon data if available
+    
+    def __post_init__(self):
+        # Set default colors if not provided
+        if self.background_color is None:
+            self.background_color = "#4285F4"  # Default blue
+        if self.text_color is None:
+            self.text_color = "#FFFFFF"  # Default white
+
+
+@dataclass
 class Profile:
     """Represents a browser profile."""
     id: str                    # Browser-specific profile identifier
@@ -19,6 +35,7 @@ class Profile:
     browser: str               # Browser type (chrome, firefox, etc.)
     is_private: bool = False   # Whether this is a private/incognito profile
     metadata: Dict[str, Any] = None  # Browser-specific metadata
+    icon: Optional[ProfileIcon] = None  # Profile icon information
     
     def __post_init__(self):
         if self.metadata is None:
@@ -85,6 +102,39 @@ class Browser(ABC):
         
         Returns:
             True if the browser executable exists and is accessible.
+        """
+        pass
+    
+    @abstractmethod
+    def get_browser_icon(self) -> Optional[str]:
+        """
+        Get the browser's main icon.
+        
+        Returns:
+            Path to browser icon file, or None if not available.
+        """
+        pass
+    
+    @abstractmethod
+    def get_private_mode_icon(self) -> Optional[str]:
+        """
+        Get the browser's private/incognito mode icon.
+        
+        Returns:
+            Path to private mode icon file, or None if not available.
+        """
+        pass
+    
+    @abstractmethod
+    def get_profile_icon(self, profile: Profile) -> ProfileIcon:
+        """
+        Get icon information for a specific profile.
+        
+        Args:
+            profile: The profile to get icon information for
+            
+        Returns:
+            ProfileIcon with color and avatar information.
         """
         pass
     

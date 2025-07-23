@@ -12,7 +12,7 @@ import os
 import subprocess
 from typing import List, Optional
 
-from browser import Browser, Profile
+from browser import Browser, Profile, ProfileIcon
 
 
 class FirefoxBrowser(Browser):
@@ -227,3 +227,67 @@ class FirefoxBrowser(Browser):
         except (configparser.Error, OSError) as e:
             logging.error("Error finding default Firefox profile: %s", e)
             return None
+    
+    def get_browser_icon(self) -> Optional[str]:
+        """
+        Get the Firefox browser icon.
+        
+        Returns path to Firefox icon or None if not found.
+        """
+        # Common Firefox icon locations
+        icon_paths = [
+            "/usr/share/icons/hicolor/256x256/apps/firefox.png",
+            "/usr/share/pixmaps/firefox.png",
+            "/usr/lib/firefox/browser/chrome/icons/default/default256.png"
+        ]
+        
+        for path in icon_paths:
+            if os.path.isfile(path):
+                return path
+        return None
+    
+    def get_private_mode_icon(self) -> Optional[str]:
+        """
+        Get the Firefox private browsing mode icon.
+        
+        Firefox typically uses a modified version of the main icon.
+        """
+        # Firefox doesn't have a separate private browsing icon file typically
+        # We'll use the main icon and let the UI modify it visually
+        return self.get_browser_icon()
+    
+    def get_profile_icon(self, profile: Profile) -> ProfileIcon:
+        """
+        Get icon information for a Firefox profile.
+        
+        Firefox doesn't have the same rich profile theming as Chrome,
+        so we'll provide sensible defaults with Firefox branding colors.
+        """
+        if profile.is_private:
+            return ProfileIcon(
+                avatar_icon="firefox-private",
+                background_color="#592ACB",  # Firefox private browsing purple
+                text_color="#FFFFFF"
+            )
+        
+        # Firefox profile colors based on Firefox branding
+        firefox_colors = [
+            "#FF6611",  # Firefox orange
+            "#0060DF",  # Firefox blue  
+            "#20123A",  # Firefox dark purple
+            "#592ACB",  # Firefox purple
+            "#00C8D7",  # Firefox cyan
+            "#FF4F5E",  # Firefox red
+            "#0090ED",  # Firefox light blue
+            "#7542E5",  # Firefox violet
+        ]
+        
+        # Use profile name hash to pick a consistent color
+        color_index = hash(profile.id) % len(firefox_colors)
+        background_color = firefox_colors[color_index]
+        
+        return ProfileIcon(
+            avatar_icon=f"firefox-avatar-{color_index}",
+            background_color=background_color,
+            text_color="#FFFFFF"
+        )
