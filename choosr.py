@@ -76,12 +76,26 @@ def show_profile_selector(url, domain, profiles):
         messagebox.showerror("Error", "No profiles available")
         return None
     
-    result = {'selected_profile': None, 'cancelled': False}
+    result = {'selected_profile': None, 'domain_pattern': None, 'cancelled': False}
+    
+    def check_domain_match():
+        """Check if the domain pattern matches the original URL and show warning."""
+        pattern = domain_var.get().strip()
+        if pattern and not fnmatch.fnmatch(domain, pattern):
+            warning_label.config(text="⚠️ Pattern doesn't match the current URL", foreground="red")
+        else:
+            warning_label.config(text="", foreground="black")
+    
+    def on_domain_change(*args):
+        """Called when domain entry is modified."""
+        root.after_idle(check_domain_match)
     
     def on_select():
         selection = profile_var.get()
-        if selection:
+        domain_pattern = domain_var.get().strip()
+        if selection and domain_pattern:
             result['selected_profile'] = selection
+            result['domain_pattern'] = domain_pattern
         root.quit()
     
     def on_cancel():
@@ -97,15 +111,15 @@ def show_profile_selector(url, domain, profiles):
     root.title("Choose Profile")
     
     # Calculate window height based on number of profiles
-    # Account for: URL section (~100px) + profile label (~30px) + buttons (~60px) + padding (~40px)
-    base_height = 230  # Fixed UI elements
+    # Account for: URL section (~80px) + domain edit (~70px) + profile label (~30px) + buttons (~60px) + padding (~40px)
+    base_height = 280  # Fixed UI elements (reduced after removing domain display)
     profile_height = 35  # Height per profile option (including padding)
     num_profiles = len(profiles)
     calculated_height = base_height + (num_profiles * profile_height)
     
     # Set reasonable limits
-    window_height = max(350, min(calculated_height, 700))  # Min 350px, max 700px
-    window_width = 450  # Fixed width
+    window_height = max(400, min(calculated_height, 700))  # Min 400px, max 700px
+    window_width = 500  # Width for domain editing
     
     root.geometry(f"{window_width}x{window_height}")
     root.resizable(False, False)
@@ -126,7 +140,22 @@ def show_profile_selector(url, domain, profiles):
     
     ttk.Label(url_frame, text="Choose a profile for:", font=('Arial', 10, 'bold')).pack()
     ttk.Label(url_frame, text=url, font=('Arial', 9), foreground="blue").pack(pady=(5, 0))
-    ttk.Label(url_frame, text=f"Domain: {domain}", font=('Arial', 9)).pack(pady=(5, 15))
+    
+    # Domain editing section
+    domain_edit_frame = ttk.Frame(url_frame)
+    domain_edit_frame.pack(fill="x", pady=(10, 0))
+    
+    ttk.Label(domain_edit_frame, text="Pattern to save:", font=('Arial', 9, 'bold')).pack(anchor="w")
+    
+    domain_var = tk.StringVar(value=domain)
+    domain_var.trace_add('write', on_domain_change)
+    
+    domain_entry = ttk.Entry(domain_edit_frame, textvariable=domain_var, font=('Arial', 9))
+    domain_entry.pack(fill="x", pady=(2, 0))
+    
+    # Warning label
+    warning_label = ttk.Label(domain_edit_frame, text="", font=('Arial', 8))
+    warning_label.pack(anchor="w", pady=(2, 5))
     
     # Profile selection with scrollable frame
     profile_outer_frame = ttk.Frame(root, padding="10")
@@ -197,7 +226,7 @@ def show_profile_selector(url, domain, profiles):
     if result['cancelled']:
         return None
     
-    return result['selected_profile']
+    return result['selected_profile'], result['domain_pattern']
 
 
 def get_chrome_profiles():
@@ -302,12 +331,13 @@ def handle_url(url):
         browser_profiles = config.get('browser_profiles', {})
         if browser_profiles:
             logging.info("No match found for %s, showing profile selector", domain)
-            selected_profile_name = show_profile_selector(url, domain, browser_profiles)
+            selection_result = show_profile_selector(url, domain, browser_profiles)
             
-            if selected_profile_name:
-                # Save the selection to config
-                save_url_match(domain, selected_profile_name)
-                logging.info("User selected profile: %s", selected_profile_name)
+            if selection_result:
+                selected_profile_name, domain_pattern = selection_result
+                # Save the selection to config with the edited domain pattern
+                save_url_match(domain_pattern, selected_profile_name)
+                logging.info("User selected profile: %s for pattern: %s", selected_profile_name, domain_pattern)
             else:
                 logging.info("User cancelled profile selection")
                 return
