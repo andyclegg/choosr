@@ -69,8 +69,17 @@ def load_config():
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
             return config or {'browser_profiles': {}, 'urls': []}
-    except (yaml.YAMLError, OSError) as e:
-        logging.error("Error reading config file: %s", e)
+    except yaml.YAMLError as e:
+        print(f"Error: Invalid YAML in config file {config_path}")
+        print(f"YAML parsing error: {e}")
+        print("Please check the file syntax and fix any formatting issues.")
+        print("You can regenerate the config file with: choosr init")
+        logging.error("Invalid YAML in config file %s: %s", config_path, e)
+        return {'browser_profiles': {}, 'urls': []}
+    except OSError as e:
+        print(f"Error: Cannot read config file {config_path}")
+        print(f"File system error: {e}")
+        logging.error("Cannot read config file %s: %s", config_path, e)
         return {'browser_profiles': {}, 'urls': []}
 
 
@@ -91,8 +100,16 @@ def save_url_match(domain, profile_name):
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
         logging.info("Saved URL match: %s -> %s", domain, profile_name)
+    except yaml.YAMLError as e:
+        print(f"Error: Cannot write YAML to config file {config_path}")
+        print(f"YAML serialization error: {e}")
+        print("The configuration could not be saved.")
+        logging.error("YAML serialization error for config file %s: %s", config_path, e)
     except OSError as e:
-        logging.error("Error saving config file: %s", e)
+        print(f"Error: Cannot write to config file {config_path}")
+        print(f"File system error: {e}")
+        print("Please check file permissions and disk space.")
+        logging.error("Cannot write to config file %s: %s", config_path, e)
 
 
 def show_profile_selector(url, domain, profiles):
@@ -114,8 +131,19 @@ def init_config():
     config_path = os.path.expanduser("~/.choosr.yaml")
     
     if os.path.exists(config_path):
-        print(f"Config file already exists at {config_path}")
-        return
+        # Try to load existing config to check if it's valid
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                yaml.safe_load(f)
+            print(f"Config file already exists at {config_path}")
+            return
+        except yaml.YAMLError:
+            print(f"Existing config file at {config_path} contains invalid YAML.")
+            response = input("Do you want to overwrite it? (y/N): ").strip().lower()
+            if not response.startswith('y'):
+                print("Config file initialization cancelled.")
+                return
+            print("Overwriting corrupted config file...")
     
     # Get all profiles from all available browsers
     all_profiles = get_all_browser_profiles()
@@ -151,9 +179,16 @@ def init_config():
             print(f"Found {count} {browser_display} profiles")
             
         logging.info("Created config file at %s with %d total profiles", config_path, len(all_profiles))
+    except yaml.YAMLError as e:
+        print(f"Error: Cannot write YAML to config file {config_path}")
+        print(f"YAML serialization error: {e}")
+        print("The configuration could not be created.")
+        logging.error("YAML serialization error creating config file %s: %s", config_path, e)
     except OSError as e:
-        print(f"Error creating config file: {e}")
-        logging.error("Error creating config file: %s", e)
+        print(f"Error: Cannot create config file {config_path}")
+        print(f"File system error: {e}")
+        print("Please check directory permissions and disk space.")
+        logging.error("Cannot create config file %s: %s", config_path, e)
 
 
 def handle_url(url):

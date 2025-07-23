@@ -1,3 +1,6 @@
+Bug fixes:
+* Behave more sensibly with invalid YAML - don't just re-init
+
 Advanced Features
 * Source Application detection - is this possible?
 * Remember window position/size
