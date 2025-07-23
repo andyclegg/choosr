@@ -6,9 +6,10 @@ authors = ["Andy Clegg <andrew.clegg@gmx.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.14"
 tldextract = "^3.5.0"
 pyyaml = "^6.0.2"
+pyside6 = "^6.9.1"
 
 [tool.poetry.scripts]
 'choosr' = 'choosr:main'
