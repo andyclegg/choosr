@@ -6,6 +6,8 @@ import logging
 import os
 import subprocess
 import sys
+import tkinter as tk
+from tkinter import messagebox, ttk
 
 import tldextract
 import yaml
@@ -45,6 +47,157 @@ def load_config():
     except (yaml.YAMLError, OSError) as e:
         logging.error("Error reading config file: %s", e)
         return {'browser_profiles': {}, 'urls': []}
+
+
+def save_url_match(domain, profile_name):
+    """Save a new URL match to the config file."""
+    config_path = os.path.expanduser("~/.choosr.yaml")
+    config = load_config()
+    
+    # Add new URL match
+    new_match = {
+        'match': domain,
+        'profile': profile_name
+    }
+    
+    config.setdefault('urls', []).append(new_match)
+    
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            yaml.dump(config, f, default_flow_style=False, indent=2)
+        logging.info("Saved URL match: %s -> %s", domain, profile_name)
+    except OSError as e:
+        logging.error("Error saving config file: %s", e)
+
+
+def show_profile_selector(url, domain, profiles):
+    """Show GUI dialog to select a profile for the URL."""
+    if not profiles:
+        messagebox.showerror("Error", "No profiles available")
+        return None
+    
+    result = {'selected_profile': None, 'cancelled': False}
+    
+    def on_select():
+        selection = profile_var.get()
+        if selection:
+            result['selected_profile'] = selection
+        root.quit()
+    
+    def on_cancel():
+        result['cancelled'] = True
+        root.quit()
+    
+    def on_window_close():
+        # Handle window close (X button)
+        result['cancelled'] = True
+        root.quit()
+    
+    root = tk.Tk()
+    root.title("Choose Profile")
+    
+    # Calculate window height based on number of profiles
+    # Account for: URL section (~100px) + profile label (~30px) + buttons (~60px) + padding (~40px)
+    base_height = 230  # Fixed UI elements
+    profile_height = 35  # Height per profile option (including padding)
+    num_profiles = len(profiles)
+    calculated_height = base_height + (num_profiles * profile_height)
+    
+    # Set reasonable limits
+    window_height = max(350, min(calculated_height, 700))  # Min 350px, max 700px
+    window_width = 450  # Fixed width
+    
+    root.geometry(f"{window_width}x{window_height}")
+    root.resizable(False, False)
+    
+    # Handle window close event
+    root.protocol("WM_DELETE_WINDOW", on_window_close)
+    
+    # Center the window
+    try:
+        root.eval('tk::PlaceWindow . center')
+    except tk.TclError:
+        # Fallback if PlaceWindow is not available
+        pass
+    
+    # URL display
+    url_frame = ttk.Frame(root, padding="10")
+    url_frame.pack(fill="x")
+    
+    ttk.Label(url_frame, text="Choose a profile for:", font=('Arial', 10, 'bold')).pack()
+    ttk.Label(url_frame, text=url, font=('Arial', 9), foreground="blue").pack(pady=(5, 0))
+    ttk.Label(url_frame, text=f"Domain: {domain}", font=('Arial', 9)).pack(pady=(5, 15))
+    
+    # Profile selection with scrollable frame
+    profile_outer_frame = ttk.Frame(root, padding="10")
+    profile_outer_frame.pack(fill="both", expand=True)
+    
+    ttk.Label(profile_outer_frame, text="Select Profile:", font=('Arial', 10, 'bold')).pack(anchor="w")
+    
+    # Create scrollable frame if there are many profiles
+    if num_profiles > 14:  # Use scrollbar if more than 14 profiles
+        # Create canvas and scrollbar
+        canvas = tk.Canvas(profile_outer_frame, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(profile_outer_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True, pady=(5, 0))
+        scrollbar.pack(side="right", fill="y", pady=(5, 0))
+        
+        profile_container = scrollable_frame
+    else:
+        # Use regular frame for fewer profiles
+        profile_container = ttk.Frame(profile_outer_frame)
+        profile_container.pack(fill="both", expand=True, pady=(5, 0))
+    
+    profile_var = tk.StringVar()
+    
+    # Create radio buttons for each profile
+    for profile_name in sorted(profiles.keys()):
+        ttk.Radiobutton(
+            profile_container,
+            text=profile_name,
+            variable=profile_var,
+            value=profile_name,
+            padding="5"
+        ).pack(anchor="w", pady=2)
+    
+    # Buttons
+    button_frame = ttk.Frame(root, padding="10")
+    button_frame.pack(fill="x", side="bottom")
+    
+    ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side="right", padx=(5, 0))
+    ttk.Button(button_frame, text="OK", command=on_select).pack(side="right")
+    
+    # Set first profile as default
+    if profiles:
+        profile_var.set(list(sorted(profiles.keys()))[0])
+    
+    try:
+        root.mainloop()
+    except tk.TclError:
+        # Handle any Tkinter errors gracefully
+        result['cancelled'] = True
+    finally:
+        try:
+            root.destroy()
+        except tk.TclError:
+            # Window may already be destroyed
+            pass
+    
+    # Return None if cancelled or closed
+    if result['cancelled']:
+        return None
+    
+    return result['selected_profile']
 
 
 def get_chrome_profiles():
@@ -144,6 +297,23 @@ def handle_url(url):
             logging.info("%s matched %s -> %s", url, match_pattern, profile_name)
             break
     
+    # If no match found, show GUI selector
+    if not selected_profile_name:
+        browser_profiles = config.get('browser_profiles', {})
+        if browser_profiles:
+            logging.info("No match found for %s, showing profile selector", domain)
+            selected_profile_name = show_profile_selector(url, domain, browser_profiles)
+            
+            if selected_profile_name:
+                # Save the selection to config
+                save_url_match(domain, selected_profile_name)
+                logging.info("User selected profile: %s", selected_profile_name)
+            else:
+                logging.info("User cancelled profile selection")
+                return
+        else:
+            logging.warning("No profiles configured")
+    
     # Get profile directory from browser_profiles config
     if selected_profile_name and selected_profile_name in config.get('browser_profiles', {}):
         profile_info = config['browser_profiles'][selected_profile_name]
@@ -162,20 +332,20 @@ def main():
     
     # Init subcommand
     subparsers.add_parser("init", help="Initialize choosr config file")
+    url_parser = subparsers.add_parser("url", help="Launch a URL")
     
-    # URL argument for default behavior
-    parser.add_argument("url", nargs="?", help="URL to open")
+    # URL argument for url subcommand
+    url_parser.add_argument("url", help="URL to open")
     
     args = parser.parse_args()
     
     if args.command == "init":
         init_config()
-    elif args.url:
+    elif args.command == "url":
         handle_url(args.url)
     else:
-        # No URL provided - launch Chrome with default profile
-        logging.info("No URL provided - launching Chrome")
-        launch_chrome("Default")
+        # No command provided - show help
+        parser.print_help()
 
 if __name__ == "__main__":
     main()
