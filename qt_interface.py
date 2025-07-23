@@ -1,8 +1,9 @@
 """
 Qt/QML interface for choosr profile selection.
 
-This module provides a modern, beautiful Qt/QML-based interface to replace
-the Tkinter GUI, with support for profile icons and improved user experience.
+This module provides a modern, beautiful Qt/QML-based interface with 
+support for profile icons, system theme detection, and improved user experience.
+Requires PySide6 as a hard dependency.
 """
 
 import os
@@ -10,20 +11,26 @@ import sys
 import logging
 from typing import List, Optional, Tuple, Dict, Any
 
-try:
-    from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt
-    from PySide6.QtGui import QGuiApplication, QIcon, QPalette
-    from PySide6.QtQml import qmlRegisterType, QmlElement
-    from PySide6.QtQuick import QQuickView
-    QML_AVAILABLE = True
-except ImportError:
-    # Fallback when PySide6 is not available
-    QML_AVAILABLE = False
-    QObject = object
-    Signal = lambda: None
-    Slot = lambda *args, **kwargs: lambda f: f
+from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt, QEvent
+from PySide6.QtGui import QGuiApplication, QIcon, QPalette, QCloseEvent
+from PySide6.QtQml import qmlRegisterType, QmlElement
+from PySide6.QtQuick import QQuickView
 
 from browser import browser_registry, Profile
+
+
+class ProfileSelectorView(QQuickView):
+    """Custom QQuickView that emits a signal when closed."""
+    
+    windowClosed = Signal()
+    
+    def __init__(self):
+        super().__init__()
+        
+    def closeEvent(self, event):
+        """Handle window close event."""
+        self.windowClosed.emit()
+        super().closeEvent(event)
 
 
 class ProfileSelectorController(QObject):
@@ -42,9 +49,6 @@ class ProfileSelectorController(QObject):
         
     def _detect_system_theme(self) -> str:
         """Detect if the system is using light or dark theme."""
-        if not QML_AVAILABLE:
-            return "light"  # Default fallback
-            
         app = QGuiApplication.instance()
         if app is None:
             return "light"
@@ -76,9 +80,6 @@ class ProfileSelectorController(QObject):
         Returns:
             Tuple of (profile_name, domain_pattern, save_choice) or None if cancelled
         """
-        if not QML_AVAILABLE:
-            logging.error("Qt/QML not available, falling back to console interface")
-            return self._console_fallback(url, domain, profiles)
         
         self._url = url
         self._domain = domain
@@ -98,13 +99,20 @@ class ProfileSelectorController(QObject):
         logging.info("Detected system theme: %s", system_theme)
         
         # Create QML view
-        self._view = QQuickView()
+        self._view = ProfileSelectorView()
         self._view.setResizeMode(QQuickView.SizeRootObjectToView)
         
         # Set window properties
         self._view.setFlags(self._view.flags() | Qt.WindowStaysOnTopHint)
         self._view.setModality(Qt.ApplicationModal)
         self._view.setTitle("Choose Profile")
+        
+        # Connect window close handling
+        def handle_window_close():
+            self._cancelled = True
+            logging.info("Qt window closed by user")
+        
+        self._view.windowClosed.connect(handle_window_close)
         
         # Register this controller with QML
         self._view.rootContext().setContextProperty("controller", self)
@@ -115,7 +123,7 @@ class ProfileSelectorController(QObject):
         
         if self._view.status() == QQuickView.Error:
             logging.error("Failed to load QML file: %s", qml_file)
-            return self._console_fallback(url, domain, profiles)
+            return None
         
         # Get root object and set properties
         root = self._view.rootObject()
@@ -220,53 +228,6 @@ class ProfileSelectorController(QObject):
         self._cancelled = True
         logging.info("QML Profile selection cancelled")
     
-    def _console_fallback(self, url: str, domain: str, profiles: Dict[str, Any]) -> Optional[Tuple[str, str, bool]]:
-        """Fallback console interface when Qt is not available."""
-        print(f"\nChoose a profile for: {url}")
-        print(f"Domain: {domain}")
-        print("\nAvailable profiles:")
-        
-        profile_list = []
-        for i, (name, config) in enumerate(profiles.items(), 1):
-            browser_type = config.get('browser', 'unknown')
-            is_private = config.get('is_private', False)
-            browser = browser_registry.get_browser(browser_type)
-            browser_display = browser.display_name if browser else browser_type.title()
-            
-            private_indicator = " (Private)" if is_private else ""
-            print(f"{i:2d}. {name} [{browser_display}]{private_indicator}")
-            profile_list.append(name)
-        
-        # Get user selection
-        try:
-            while True:
-                choice = input(f"\nSelect profile (1-{len(profile_list)}) or 'q' to quit: ").strip()
-                if choice.lower() == 'q':
-                    return None
-                
-                try:
-                    index = int(choice) - 1
-                    if 0 <= index < len(profile_list):
-                        selected_profile = profile_list[index]
-                        break
-                    else:
-                        print("Invalid selection. Please try again.")
-                except ValueError:
-                    print("Please enter a number or 'q' to quit.")
-            
-            # Get domain pattern
-            domain_pattern = input(f"Domain pattern to save (default: {domain}): ").strip()
-            if not domain_pattern:
-                domain_pattern = domain
-            
-            # Ask about saving
-            save_choice = input("Save this choice for future use? (y/N): ").strip().lower().startswith('y')
-            
-            return (selected_profile, domain_pattern, save_choice)
-            
-        except (KeyboardInterrupt, EOFError):
-            print("\nCancelled by user")
-            return None
 
 
 # Global instance for use by choosr.py
