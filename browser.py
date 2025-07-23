@@ -34,12 +34,7 @@ class Profile:
     name: str                  # User-friendly display name  
     browser: str               # Browser type (chrome, firefox, etc.)
     is_private: bool = False   # Whether this is a private/incognito profile
-    metadata: Dict[str, Any] = None  # Browser-specific metadata
     icon: Optional[ProfileIcon] = None  # Profile icon information
-    
-    def __post_init__(self):
-        if self.metadata is None:
-            self.metadata = {}
 
 
 class Browser(ABC):

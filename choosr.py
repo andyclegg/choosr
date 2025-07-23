@@ -74,12 +74,11 @@ def load_config():
         print(f"YAML parsing error: {e}")
         print("Please check the file syntax and fix any formatting issues.")
         print("You can regenerate the config file with: choosr init")
-        logging.error("Invalid YAML in config file %s: %s", config_path, e)
-        return {'browser_profiles': {}, 'urls': []}
+        sys.exit(1)
     except OSError as e:
         print(f"Error: Cannot read config file {config_path}")
         print(f"File system error: {e}")
-        logging.error("Cannot read config file %s: %s", config_path, e)
+        sys.exit(1)
         return {'browser_profiles': {}, 'urls': []}
 
 
@@ -160,7 +159,6 @@ def init_config():
             'browser': profile.browser,
             'profile_id': profile.id,
             'is_private': profile.is_private,
-            'metadata': profile.metadata
         }
     
     try:

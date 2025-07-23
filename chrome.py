@@ -72,7 +72,6 @@ class ChromeBrowser(Browser):
                         name=display_name,
                         browser=self.name,
                         is_private=False,
-                        metadata={'directory': profile_dir},
                         icon=profile_icon
                     ))
                     
@@ -90,7 +89,6 @@ class ChromeBrowser(Browser):
             name="Incognito Mode",
             browser=self.name,
             is_private=True,
-            metadata={'directory': None}
         )
     
     def launch(self, profile: Profile, url: Optional[str] = None) -> None:
@@ -103,13 +101,10 @@ class ChromeBrowser(Browser):
         command = [self.executable_path]
         
         # Handle incognito mode (when profile directory is None)
-        if profile.is_private or profile.metadata.get('directory') is None:
+        if profile.is_private:
             command.append("--incognito")
-            logging.info("Launching Chrome in incognito mode")
         else:
-            profile_dir = profile.metadata.get('directory', profile.id)
-            command.append(f"--profile-directory={profile_dir}")
-            logging.info("Launching Chrome with profile directory: %s", profile_dir)
+            command.append(f"--profile-directory={profile.id}")
         
         if url is not None:
             command.append(url)

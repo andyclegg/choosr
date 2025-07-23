@@ -69,28 +69,14 @@ class FirefoxBrowser(Browser):
                     section = config[section_name]
                     
                     profile_name = section.get('Name', section_name)
-                    profile_path = section.get('Path', '')
-                    is_relative = section.getboolean('IsRelative', True)
                     
-                    if profile_path:
-                        # Verify the profile directory exists
-                        if is_relative:
-                            full_profile_path = os.path.join(firefox_config_dir, profile_path)
-                        else:
-                            full_profile_path = profile_path
-                        
-                        if os.path.isdir(full_profile_path):
-                            profiles.append(Profile(
-                                id=profile_name,
-                                name=profile_name,
-                                browser=self.name,
-                                is_private=False,
-                                metadata={
-                                    'path': profile_path,
-                                    'is_relative': is_relative,
-                                    'full_path': full_profile_path
-                                }
-                            ))
+                    if profile_name:
+                        profiles.append(Profile(
+                            id=profile_name,
+                            name=profile_name,
+                            browser=self.name,
+                            is_private=False
+                        ))
                     
         except (configparser.Error, OSError) as e:
             logging.error("Error reading Firefox profiles.ini: %s", e)
@@ -108,7 +94,6 @@ class FirefoxBrowser(Browser):
             name="Private Window",
             browser=self.name,
             is_private=True,
-            metadata={'private_mode': True}
         )
     
     def launch(self, profile: Profile, url: Optional[str] = None) -> None:
@@ -122,7 +107,7 @@ class FirefoxBrowser(Browser):
         command = [self.executable_path]
         
         # Handle private browsing mode
-        if profile.is_private or profile.metadata.get('private_mode', False):
+        if profile.is_private:
             command.append("--private-window")
             logging.info("Launching Firefox in private browsing mode")
         else:
@@ -177,25 +162,6 @@ class FirefoxBrowser(Browser):
         profiles = self.discover_profiles()
         return any(p.id == profile_id for p in profiles)
     
-    def get_profile_path(self, profile_id: str) -> Optional[str]:
-        """
-        Get the full filesystem path for a profile.
-        
-        Args:
-            profile_id: The profile name
-            
-        Returns:
-            Full path to the profile directory, or None for private mode.
-        """
-        if profile_id == "private":
-            return None
-        
-        profiles = self.discover_profiles()
-        for profile in profiles:
-            if profile.id == profile_id:
-                return profile.metadata.get('full_path')
-        
-        return None
     
     def get_default_profile(self) -> Optional[Profile]:
         """

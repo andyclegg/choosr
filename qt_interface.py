@@ -171,8 +171,7 @@ class ProfileSelectorController(QObject):
                 id=profile_config.get('profile_id', profile_name),
                 name=profile_name,
                 browser=browser_type,
-                is_private=is_private,
-                metadata=profile_config.get('metadata', {})
+                is_private=is_private
             )
             
             # Get icon information
