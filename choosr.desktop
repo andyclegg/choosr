@@ -1,14 +1,16 @@
+# This is a template desktop file.
+# The actual desktop file is generated and installed by install.sh
+# Do not use this file directly for desktop integration.
+
 [Desktop Entry]
-Categories=Network;
-Comment=Choose what browser to use for specific links
-Exec=/home/andy/.local/bin/poetry run choosr %u
-GenericName=Browser Choosr
-MimeType=x-scheme-handler/unknown;x-scheme-handler/about;text/html;text/xml;application/xhtml_xml;x-scheme-handler/http;x-scheme-handler/https;
 Name=Choosr
-NoDisplay=false
-Path=/home/andy/choosr
+GenericName=Browser Chooser
+Comment=Choose which browser profile to use for links
+Exec=WILL_BE_REPLACED_BY_INSTALL_SCRIPT
+Icon=WILL_BE_REPLACED_BY_INSTALL_SCRIPT
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;text/html;application/xhtml+xml;
 StartupNotify=true
 Terminal=false
-Type=Application
-X-KDE-SubstituteUID=false
-X-KDE-Username=
+NoDisplay=false

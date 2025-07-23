@@ -1,8 +1,23 @@
-To install:
+## Installation
 
+**Prerequisites:**
+- Poetry must be installed
+- Run `poetry install` to set up dependencies
+
+**Install choosr as a system application:**
+```bash
+./install.sh
 ```
-desktop-file-validate choosr.desktop
-sudo desktop-file-install choosr.desktop
+
+This will:
+- Create a proper launcher script
+- Install the desktop file with correct paths
+- Set up the application icon
+- Initialize the choosr configuration
+
+**Uninstall:**
+```bash
+./uninstall.sh
 ```
 
 ## Setting choosr as Default Browser
