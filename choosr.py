@@ -49,34 +49,31 @@ def get_chrome_profiles():
         logging.warning("Chrome config directory not found at %s", chrome_config_dir)
         return profiles
     
+    # Read profile information from Local State file
+    local_state_file = os.path.join(chrome_config_dir, "Local State")
+    if not os.path.exists(local_state_file):
+        logging.warning("Chrome Local State file not found at %s", local_state_file)
+        return profiles
+    
     try:
-        # Look for profile directories
-        for item in os.listdir(chrome_config_dir):
-            profile_path = os.path.join(chrome_config_dir, item)
+        with open(local_state_file, 'r', encoding='utf-8') as f:
+            local_state = json.load(f)
+            
+        # Get profile info from Local State
+        profile_info_cache = local_state.get('profile', {}).get('info_cache', {})
+        
+        for profile_dir, profile_info in profile_info_cache.items():
+            # Verify the profile directory actually exists
+            profile_path = os.path.join(chrome_config_dir, profile_dir)
             if os.path.isdir(profile_path):
-                # Check if it's a profile directory (has Preferences file)
-                prefs_file = os.path.join(profile_path, "Preferences")
-                if os.path.exists(prefs_file):
-                    profile_name = item
-                    display_name = item
-                    
-                    # Try to get the display name from Preferences
-                    try:
-                        with open(prefs_file, 'r', encoding='utf-8') as f:
-                            prefs = json.load(f)
-                            profile_info = prefs.get('profile', {})
-                            if 'name' in profile_info:
-                                display_name = profile_info['name']
-                    except (json.JSONDecodeError, OSError):
-                        # Fall back to directory name if we can't read preferences
-                        pass
-                    
-                    profiles.append({
-                        'directory': profile_name,
-                        'name': display_name
-                    })
-    except OSError as e:
-        logging.error("Error reading Chrome profiles: %s", e)
+                display_name = profile_info.get('name', profile_dir)
+                profiles.append({
+                    'directory': profile_dir,
+                    'name': display_name
+                })
+                
+    except (json.JSONDecodeError, OSError) as e:
+        logging.error("Error reading Chrome Local State: %s", e)
     
     return profiles
 
