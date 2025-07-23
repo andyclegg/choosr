@@ -96,30 +96,68 @@ create_icon() {
     cat > "$icon_path" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <!-- Football field background -->
-  <rect width="64" height="64" rx="8" fill="#2E7D32"/>
+  <!-- Background -->
+  <rect width="64" height="64" rx="8" fill="#1976D2"/>
   
-  <!-- Field lines -->
-  <rect x="8" y="8" width="48" height="48" rx="4" fill="none" stroke="#81C784" stroke-width="1"/>
-  <line x1="32" y1="8" x2="32" y2="56" stroke="#81C784" stroke-width="1"/>
-  <circle cx="32" cy="32" r="8" fill="none" stroke="#81C784" stroke-width="1"/>
+  <!-- Central globe -->
+  <circle cx="32" cy="32" r="16" fill="#4CAF50"/>
+  <circle cx="32" cy="32" r="16" fill="none" stroke="#2E7D32" stroke-width="1.5"/>
   
-  <!-- Goal posts -->
-  <rect x="28" y="6" width="8" height="4" fill="#FFC107"/>
-  <rect x="28" y="54" width="8" height="4" fill="#FFC107"/>
+  <!-- Globe grid lines -->
+  <ellipse cx="32" cy="32" rx="16" ry="8" fill="none" stroke="#2E7D32" stroke-width="1"/>
+  <ellipse cx="32" cy="32" rx="16" ry="4" fill="none" stroke="#2E7D32" stroke-width="0.8"/>
+  <line x1="16" y1="32" x2="48" y2="32" stroke="#2E7D32" stroke-width="1"/>
+  <line x1="32" y1="16" x2="32" y2="48" stroke="#2E7D32" stroke-width="1"/>
   
-  <!-- Football -->
-  <ellipse cx="32" cy="32" rx="8" ry="6" fill="white"/>
-  <ellipse cx="32" cy="32" rx="8" ry="6" fill="none" stroke="#2E7D32" stroke-width="1"/>
-  <line x1="26" y1="32" x2="38" y2="32" stroke="#2E7D32" stroke-width="1"/>
-  <line x1="29" y1="28" x2="35" y2="28" stroke="#2E7D32" stroke-width="0.8"/>
-  <line x1="29" y1="36" x2="35" y2="36" stroke="#2E7D32" stroke-width="0.8"/>
+  <!-- Continents (simple shapes) -->
+  <ellipse cx="28" cy="26" rx="3" ry="2" fill="#2E7D32"/>
+  <ellipse cx="36" cy="30" rx="2" ry="3" fill="#2E7D32"/>
+  <ellipse cx="30" cy="38" rx="4" ry="2" fill="#2E7D32"/>
   
-  <!-- Browser icons as small circles -->
-  <circle cx="20" cy="20" r="4" fill="#4285F4" opacity="0.8"/>
-  <circle cx="44" cy="20" r="4" fill="#FF9800" opacity="0.8"/>
-  <circle cx="20" cy="44" r="4" fill="#E53E3E" opacity="0.8"/>
-  <circle cx="44" cy="44" r="4" fill="#9C27B0" opacity="0.8"/>
+  <!-- Outgoing arrows representing browser choices -->
+  <!-- Top-right arrow -->
+  <g stroke="#FF9800" stroke-width="2" fill="none">
+    <path d="M44 20 L54 10" />
+    <path d="M50 10 L54 10 L54 14" />
+  </g>
+  
+  <!-- Right arrow -->
+  <g stroke="#FF9800" stroke-width="2" fill="none">
+    <path d="M48 32 L58 32" />
+    <path d="M54 28 L58 32 L54 36" />
+  </g>
+  
+  <!-- Bottom-right arrow -->
+  <g stroke="#FF9800" stroke-width="2" fill="none">
+    <path d="M44 44 L54 54" />
+    <path d="M50 54 L54 54 L54 50" />
+  </g>
+  
+  <!-- Bottom-left arrow -->
+  <g stroke="#FF9800" stroke-width="2" fill="none">
+    <path d="M20 44 L10 54" />
+    <path d="M14 54 L10 54 L10 50" />
+  </g>
+  
+  <!-- Left arrow -->
+  <g stroke="#FF9800" stroke-width="2" fill="none">
+    <path d="M16 32 L6 32" />
+    <path d="M10 28 L6 32 L10 36" />
+  </g>
+  
+  <!-- Top-left arrow -->
+  <g stroke="#FF9800" stroke-width="2" fill="none">
+    <path d="M20 20 L10 10" />
+    <path d="M14 10 L10 10 L10 14" />
+  </g>
+  
+  <!-- Small browser icons at arrow endpoints -->
+  <circle cx="54" cy="10" r="3" fill="#4285F4"/>
+  <circle cx="58" cy="32" r="3" fill="#FF5722"/>
+  <circle cx="54" cy="54" r="3" fill="#9C27B0"/>
+  <circle cx="10" cy="54" r="3" fill="#FF9800"/>
+  <circle cx="6" cy="32" r="3" fill="#E91E63"/>
+  <circle cx="10" cy="10" r="3" fill="#00BCD4"/>
 </svg>
 EOF
 
