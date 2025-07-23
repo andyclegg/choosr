@@ -2,7 +2,7 @@
 name = "choosr"
 version = "0.1.0"
 description = ""
-authors = ["Andy Clegg <andrew.clegg@pacerevenue.com>"]
+authors = ["Andy Clegg <andrew.clegg@gmx.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
