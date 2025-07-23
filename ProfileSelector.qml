@@ -6,7 +6,7 @@ import Qt5Compat.GraphicalEffects
 Rectangle {
     id: window
     width: 900
-    height: 650  // Reduced height since we removed button section
+    height: Math.min(850, screenHeight * 0.95)  // Taller default, but respect screen limits
     focus: true  // Enable focus to receive key events
     
     // Global keyboard event handling
@@ -93,6 +93,9 @@ Rectangle {
     property string systemTheme: "light"
     property bool animateSelectedProfile: false  // Signal to trigger animation on selected profile
     
+    // Screen dimension properties (set by Qt controller)
+    property int screenHeight: 1280
+    
     // Timer for delaying window close after animation
     Timer {
         id: selectionDelayTimer
@@ -158,7 +161,7 @@ Rectangle {
     
     // Header section
     Rectangle {
-        id: header
+        id: headerSection
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -200,7 +203,7 @@ Rectangle {
     // Domain pattern editing section
     Rectangle {
         id: domainSection
-        anchors.top: header.bottom
+        anchors.top: headerSection.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         height: 110
@@ -349,6 +352,7 @@ Rectangle {
         }
         
         ColumnLayout {
+            id: profileColumnLayout
             anchors.fill: parent
             anchors.margins: 20
             spacing: 15
@@ -377,6 +381,7 @@ Rectangle {
                         color: "transparent"
                         
                         ColumnLayout {
+                            id: browserColumnLayout
                             anchors.fill: parent
                             spacing: 10
                             
@@ -406,26 +411,26 @@ Rectangle {
                                 Column {
                                     width: parent.width
                                     spacing: 8
+                                
+                                Repeater {
+                                    model: modelData.profiles
                                     
-                                    Repeater {
-                                        model: modelData.profiles
+                                    Rectangle {
+                                        id: profileRect
+                                        width: parent.width
+                                        height: 70
+                                        radius: 8
+                                        border.color: window.selectedProfile === modelData.name ? primaryColor : "transparent"
+                                        border.width: 2
                                         
-                                        Rectangle {
-                                            id: profileRect
-                                            width: parent.width
-                                            height: 70
-                                            radius: 8
-                                            border.color: window.selectedProfile === modelData.name ? primaryColor : "transparent"
-                                            border.width: 2
-                                            
-                                            // Animation properties
-                                            property bool isAnimating: false
-                                            property color animationColor: "transparent"
-                                            
-                                            // Final color combines hover, animation, and base states
-                                            color: isAnimating ? animationColor : (profileMouseArea.containsMouse ? hoverColor : "transparent")
-                                            
-                                            SequentialAnimation {
+                                        // Animation properties
+                                        property bool isAnimating: false
+                                        property color animationColor: "transparent"
+                                        
+                                        // Final color combines hover, animation, and base states
+                                        color: isAnimating ? animationColor : (profileMouseArea.containsMouse ? hoverColor : "transparent")
+                                        
+                                        SequentialAnimation {
                                                 id: selectionAnimation
                                                 
                                                 onStarted: profileRect.isAnimating = true
@@ -798,6 +803,7 @@ Rectangle {
         // The animation will be handled by the MouseArea that triggered the selection
         return null
     }
+    
     
     // Initialize when component is completed
     Component.onCompleted: {

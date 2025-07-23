@@ -12,7 +12,7 @@ import logging
 from typing import List, Optional, Tuple, Dict, Any
 
 from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt, QEvent
-from PySide6.QtGui import QGuiApplication, QIcon, QPalette, QCloseEvent
+from PySide6.QtGui import QGuiApplication, QIcon, QPalette, QCloseEvent, QScreen
 from PySide6.QtQml import qmlRegisterType, QmlElement
 from PySide6.QtQuick import QQuickView
 
@@ -98,6 +98,13 @@ class ProfileSelectorController(QObject):
         system_theme = self._detect_system_theme()
         logging.info("Detected system theme: %s", system_theme)
         
+        # Get screen dimensions - use availableGeometry for proper scaling and taskbar handling
+        screen = app.primaryScreen()
+        screen_geometry = screen.availableGeometry()
+        screen_height = screen_geometry.height()
+        
+        logging.info("Available screen height: %d pixels (logical)", screen_height)
+        
         # Create QML view
         self._view = ProfileSelectorView()
         self._view.setResizeMode(QQuickView.SizeRootObjectToView)
@@ -133,6 +140,7 @@ class ProfileSelectorController(QObject):
             root.setProperty("domainPattern", domain)
             root.setProperty("profileData", profile_data)
             root.setProperty("systemTheme", system_theme)
+            root.setProperty("screenHeight", screen_height)
             
             # Connect signals
             root.profileSelected.connect(self._on_profile_selected)
