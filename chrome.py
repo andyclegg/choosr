@@ -65,7 +65,7 @@ class ChromeBrowser(Browser):
                 if os.path.isdir(profile_path):
                     display_name = profile_info.get('name', profile_dir)
                     # Get profile icon information
-                    profile_icon = self._get_profile_icon_from_info(profile_info)
+                    profile_icon = self._get_profile_icon_from_info(profile_info, profile_dir)
                     
                     profiles.append(Profile(
                         id=profile_dir,
@@ -214,12 +214,15 @@ class ChromeBrowser(Browser):
         # Fallback: try to get fresh data from Local State
         return self._get_profile_icon_from_local_state(profile.id)
     
-    def _get_profile_icon_from_info(self, profile_info: dict) -> ProfileIcon:
+    def _get_profile_icon_from_info(self, profile_info: dict, profile_id: str) -> ProfileIcon:
         """
         Extract profile icon information from Chrome's profile info.
         
-        Chrome stores avatar_icon and theme_colors in the profile info.
+        Chrome stores avatar_icon, theme_colors, and gaia picture info.
         """
+        # Try to get actual profile picture file first
+        icon_file_path = self._get_profile_picture_path(profile_info, profile_id)
+        
         # Chrome avatar icon identifiers
         avatar_icon = profile_info.get('avatar_icon', 'chrome-avatar-generic')
         
@@ -242,35 +245,49 @@ class ChromeBrowser(Browser):
                     color_int = color_int + 2**32
                 text_color = f"#{color_int:06X}"
         
-        # Chrome avatar icon mapping
+        # Try to extract background color from profile_highlight_color or profile_color_seed
+        if not background_color:
+            if 'profile_highlight_color' in profile_info:
+                color_int = profile_info['profile_highlight_color']
+                if color_int < 0:
+                    color_int = color_int + 2**32
+                background_color = f"#{color_int:06X}"
+            elif 'default_avatar_fill_color' in profile_info:
+                color_int = profile_info['default_avatar_fill_color']
+                if color_int < 0:
+                    color_int = color_int + 2**32
+                background_color = f"#{color_int:06X}"
+        
+        # Chrome avatar icon color mapping (fallback)
         chrome_colors = {
             'chrome-avatar-generic': "#4285F4",
-            'chrome-avatar-1': "#EA4335",
-            'chrome-avatar-2': "#34A853", 
-            'chrome-avatar-3': "#FBBC04",
-            'chrome-avatar-4': "#FF6D01",
-            'chrome-avatar-5': "#9AA0A6",
-            'chrome-avatar-6': "#4285F4",
-            'chrome-avatar-7': "#0F9D58",
-            'chrome-avatar-8': "#F4B400",
-            'chrome-avatar-9': "#DB4437",
-            'chrome-avatar-10': "#673AB7",
-            'chrome-avatar-11': "#FF5722",
-            'chrome-avatar-12': "#607D8B",
-            'chrome-avatar-13': "#795548",
-            'chrome-avatar-14': "#3F51B5",
-            'chrome-avatar-15': "#E91E63",
-            'chrome-avatar-16': "#00BCD4",
-            'chrome-avatar-17': "#CDDC39",
-            'chrome-avatar-18': "#FF9800",
-            'chrome-avatar-19': "#9C27B0",
-            'chrome-avatar-20': "#2196F3",
-            'chrome-avatar-21': "#009688",
-            'chrome-avatar-22': "#8BC34A",
-            'chrome-avatar-23': "#FFC107",
-            'chrome-avatar-24': "#FF5722",
-            'chrome-avatar-25': "#6D4C41",
-            'chrome-avatar-26': "#546E7A"
+            'chrome://theme/IDR_PROFILE_AVATAR_26': "#546E7A",
+            'chrome://theme/IDR_PROFILE_AVATAR_0': "#EA4335",
+            'chrome://theme/IDR_PROFILE_AVATAR_1': "#34A853", 
+            'chrome://theme/IDR_PROFILE_AVATAR_2': "#FBBC04",
+            'chrome://theme/IDR_PROFILE_AVATAR_3': "#FF6D01",
+            'chrome://theme/IDR_PROFILE_AVATAR_4': "#9AA0A6",
+            'chrome://theme/IDR_PROFILE_AVATAR_5': "#4285F4",
+            'chrome://theme/IDR_PROFILE_AVATAR_6': "#0F9D58",
+            'chrome://theme/IDR_PROFILE_AVATAR_7': "#F4B400",
+            'chrome://theme/IDR_PROFILE_AVATAR_8': "#DB4437",
+            'chrome://theme/IDR_PROFILE_AVATAR_9': "#673AB7",
+            'chrome://theme/IDR_PROFILE_AVATAR_10': "#FF5722",
+            'chrome://theme/IDR_PROFILE_AVATAR_11': "#607D8B",
+            'chrome://theme/IDR_PROFILE_AVATAR_12': "#795548",
+            'chrome://theme/IDR_PROFILE_AVATAR_13': "#3F51B5",
+            'chrome://theme/IDR_PROFILE_AVATAR_14': "#E91E63",
+            'chrome://theme/IDR_PROFILE_AVATAR_15': "#00BCD4",
+            'chrome://theme/IDR_PROFILE_AVATAR_16': "#CDDC39",
+            'chrome://theme/IDR_PROFILE_AVATAR_17': "#FF9800",
+            'chrome://theme/IDR_PROFILE_AVATAR_18': "#9C27B0",
+            'chrome://theme/IDR_PROFILE_AVATAR_19': "#2196F3",
+            'chrome://theme/IDR_PROFILE_AVATAR_20': "#009688",
+            'chrome://theme/IDR_PROFILE_AVATAR_21': "#8BC34A",
+            'chrome://theme/IDR_PROFILE_AVATAR_22': "#FFC107",
+            'chrome://theme/IDR_PROFILE_AVATAR_23': "#FF5722",
+            'chrome://theme/IDR_PROFILE_AVATAR_24': "#6D4C41",
+            'chrome://theme/IDR_PROFILE_AVATAR_25': "#546E7A"
         }
         
         # Use theme color if available, otherwise use avatar color
@@ -283,7 +300,8 @@ class ChromeBrowser(Browser):
         return ProfileIcon(
             avatar_icon=avatar_icon,
             background_color=background_color,
-            text_color=text_color
+            text_color=text_color,
+            icon_file_path=icon_file_path
         )
     
     def _get_profile_icon_from_local_state(self, profile_id: str) -> ProfileIcon:
@@ -301,8 +319,34 @@ class ChromeBrowser(Browser):
             profile_info_cache = local_state.get('profile', {}).get('info_cache', {})
             profile_info = profile_info_cache.get(profile_id, {})
             
-            return self._get_profile_icon_from_info(profile_info)
+            return self._get_profile_icon_from_info(profile_info, profile_id)
             
         except (json.JSONDecodeError, OSError) as e:
             logging.error("Error reading Chrome Local State for icons: %s", e)
             return ProfileIcon()  # Return default
+    
+    def _get_profile_picture_path(self, profile_info: dict, profile_id: str) -> Optional[str]:
+        """
+        Get the path to the profile picture file.
+        
+        Chrome stores profile pictures in several possible locations:
+        1. Google Profile Picture.png in the profile directory (for Google accounts)
+        2. Avatar image in Accounts/Avatar Images/ directory (for Google accounts)
+        3. Default avatar based on avatar_icon setting
+        """
+        chrome_config_dir = self.get_config_directory()
+        
+        # Method 1: Check for Google Profile Picture.png in profile directory
+        profile_picture_path = os.path.join(chrome_config_dir, profile_id, "Google Profile Picture.png")
+        if os.path.isfile(profile_picture_path):
+            return profile_picture_path
+        
+        # Method 2: Check Avatar Images directory using gaia_id
+        gaia_id = profile_info.get('gaia_id')
+        if gaia_id:
+            avatar_image_path = os.path.join(chrome_config_dir, profile_id, "Accounts", "Avatar Images", gaia_id)
+            if os.path.isfile(avatar_image_path):
+                return avatar_image_path
+        
+        # Method 3: No actual image file found
+        return None

@@ -178,6 +178,7 @@ class ProfileSelectorController(QObject):
             browser_icon_path = None
             background_color = "#4285F4"
             text_color = "#FFFFFF"
+            icon_file_path = None
             
             if browser:
                 browser_icon_path = browser.get_browser_icon()
@@ -187,6 +188,7 @@ class ProfileSelectorController(QObject):
                 profile_icon = browser.get_profile_icon(profile)
                 background_color = profile_icon.background_color or "#4285F4"
                 text_color = profile_icon.text_color or "#FFFFFF"
+                icon_file_path = profile_icon.icon_file_path
             
             profile_data = {
                 'name': profile_name,
@@ -196,6 +198,7 @@ class ProfileSelectorController(QObject):
                 'browserIcon': browser_icon_path or "",
                 'backgroundColor': background_color,
                 'textColor': text_color,
+                'iconFilePath': icon_file_path or "",
                 'profileId': profile_config.get('profile_id', profile_name)
             }
             

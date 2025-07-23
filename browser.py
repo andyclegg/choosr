@@ -18,6 +18,7 @@ class ProfileIcon:
     background_color: Optional[str] = None  # Hex color code
     text_color: Optional[str] = None     # Hex color for text
     icon_data: Optional[bytes] = None    # Raw icon data if available
+    icon_file_path: Optional[str] = None # Path to actual icon file (e.g., profile picture)
     
     def __post_init__(self):
         # Set default colors if not provided

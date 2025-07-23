@@ -489,24 +489,45 @@ Rectangle {
                                                     radius: 20
                                                     color: modelData.backgroundColor || "#4285F4"
                                                     
-                                                    // Browser icon or avatar
+                                                    // Profile picture (highest priority)
                                                     Image {
+                                                        id: profilePicture
+                                                        anchors.centerIn: parent
+                                                        width: 36
+                                                        height: 36
+                                                        source: modelData.iconFilePath ? "file://" + modelData.iconFilePath : ""
+                                                        visible: source != "" && status === Image.Ready
+                                                        fillMode: Image.PreserveAspectCrop
+                                                        smooth: true
+                                                        layer.enabled: true
+                                                        layer.effect: OpacityMask {
+                                                            maskSource: Rectangle {
+                                                                width: profilePicture.width
+                                                                height: profilePicture.height
+                                                                radius: width / 2
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    // Browser icon fallback
+                                                    Image {
+                                                        id: browserIcon
                                                         anchors.centerIn: parent
                                                         width: 20
                                                         height: 20
                                                         source: modelData.browserIcon || ""
-                                                        visible: source != ""
+                                                        visible: !profilePicture.visible && source != ""
                                                         fillMode: Image.PreserveAspectFit
                                                     }
                                                     
-                                                    // Fallback to text avatar
+                                                    // Text avatar fallback
                                                     Text {
                                                         anchors.centerIn: parent
                                                         text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
                                                         font.pixelSize: 18
                                                         font.weight: Font.Bold
                                                         color: modelData.textColor || "#FFFFFF"
-                                                        visible: !parent.children[0].visible
+                                                        visible: !profilePicture.visible && !browserIcon.visible
                                                     }
                                                 }
                                                 
