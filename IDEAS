@@ -1,17 +1,9 @@
-* Pop-up when clicking a link that isn't categorized
-  * add a tickbox 'remember' that persists this
-
 Browser Support
-* Chrome - automatically determine the list of profiles
-  * include incognito?
 * Firefox
   * also include incognito or similar
-* Profiles are top level - so Chrome A, Chrome B, Firefox, Konqueror would all appear at top level
 * Implement via plugins or at least a strong interface
 
-Configuration
-* one file e.g. YAML/TOML/JSON
-* browser config
-* URL lists/regexes
+Chrome Features
+* include incognito profiles?
 
 Source Application detection - is this possible?
