@@ -30,14 +30,21 @@ def launch_chrome(profile_dir, url=None):
     logging.info("%s", str(command))
     subprocess.run(command, check=False)
 
-def get_matchers(filename):
-    """Read URL matchers from file."""
+def load_config():
+    """Load choosr configuration from YAML file."""
+    config_path = os.path.expanduser("~/.choosr.yaml")
+    
+    if not os.path.exists(config_path):
+        logging.warning("Config file not found at %s", config_path)
+        return {'browser_profiles': {}, 'urls': []}
+    
     try:
-        with open(filename, 'rt', encoding='utf-8') as f:
-            return f.read().splitlines()
-    except FileNotFoundError:
-        logging.warning("Matcher file %s not found", filename)
-        return []
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            return config or {'browser_profiles': {}, 'urls': []}
+    except (yaml.YAMLError, OSError) as e:
+        logging.error("Error reading config file: %s", e)
+        return {'browser_profiles': {}, 'urls': []}
 
 
 def get_chrome_profiles():
@@ -91,7 +98,8 @@ def init_config():
     
     # Create config structure with profile names as keys
     config = {
-        'browser_profiles': {}
+        'browser_profiles': {},
+        'urls': []
     }
     
     # Add each Chrome profile with name as key
@@ -117,19 +125,34 @@ def init_config():
 
 def handle_url(url):
     """Handle URL opening with profile selection."""
-    profile = "Default"
+    config = load_config()
     
     parsed = tldextract.extract(url)
     domain = parsed.registered_domain
     logging.info("url=%s => parsed=%s => domain=%s", url, parsed, domain)
 
-    for match_glob in get_matchers("work.txt"):
-        if fnmatch.fnmatch(domain, match_glob):
-            profile = "Profile 5"
-            logging.info("%s matched %s -> %s", url, match_glob, profile)
+    # Find matching profile from config
+    selected_profile_name = None
+    selected_profile_dir = "Default"
+    
+    for url_config in config.get('urls', []):
+        match_pattern = url_config.get('match', '')
+        profile_name = url_config.get('profile', '')
+        
+        if fnmatch.fnmatch(domain, match_pattern):
+            selected_profile_name = profile_name
+            logging.info("%s matched %s -> %s", url, match_pattern, profile_name)
             break
+    
+    # Get profile directory from browser_profiles config
+    if selected_profile_name and selected_profile_name in config.get('browser_profiles', {}):
+        profile_info = config['browser_profiles'][selected_profile_name]
+        selected_profile_dir = profile_info.get('directory', 'Default')
+        logging.info("Using profile directory: %s", selected_profile_dir)
+    else:
+        logging.info("No matching profile found, using Default")
 
-    launch_chrome(profile, url=url)
+    launch_chrome(selected_profile_dir, url=url)
 
 
 def main():
