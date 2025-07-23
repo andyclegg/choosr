@@ -1,6 +1,3 @@
-Bug fixes:
-* Behave more sensibly with invalid YAML - don't just re-init
-
 Advanced Features
 * Source Application detection - is this possible?
 * Remember window position/size
@@ -8,7 +5,5 @@ Advanced Features
 * Profile groups/categories
 
 Performance & UX
-* Faster profile discovery caching
 * Background profile updates
-* Startup time optimization
-* Better error handling and user feedback
+* Simplify UI - 'remember pattern' tickbox next to domain box, get rid of buttons and just double click on browser profiel to launch
