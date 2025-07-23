@@ -1,9 +1,3 @@
-Nicer choice window:
-* Use QML + Qt instead of Tkinter
-* Display the profile picture / colouring that Chrome uses
-* General nicer layout
-* Better responsive design for many profiles
-
 Advanced Features
 * Source Application detection - is this possible?
 * Remember window position/size

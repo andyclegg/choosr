@@ -105,7 +105,7 @@ class FirefoxBrowser(Browser):
         """
         return Profile(
             id="private",
-            name="Firefox Private Window",
+            name="Private Window",
             browser=self.name,
             is_private=True,
             metadata={'private_mode': True}

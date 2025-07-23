@@ -84,12 +84,10 @@ class ChromeBrowser(Browser):
     def get_private_mode_profile(self) -> Profile:
         """
         Get the Chrome incognito mode profile.
-        
-        Based on the special "Chrome Incognito Mode" profile from choosr.py.
         """
         return Profile(
             id="incognito",
-            name="Chrome Incognito Mode",
+            name="Incognito Mode",
             browser=self.name,
             is_private=True,
             metadata={'directory': None}
