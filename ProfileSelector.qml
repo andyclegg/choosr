@@ -585,7 +585,7 @@ Rectangle {
             
             // Instructions
             Text {
-                text: "Use ↑↓←→ arrows to navigate • Press Enter to launch • Double-click to launch • Hold Ctrl to show shortcuts (Ctrl+0-9) • Press Escape to cancel"
+                text: "↑↓←→ to navigate • Enter/Double-click to launch • Hold Ctrl to show shortcuts (Ctrl+0-9) • Escape to cancel"
                 font.pixelSize: 11
                 color: textSecondaryColor
                 horizontalAlignment: Text.AlignHCenter
