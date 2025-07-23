@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import argparse
 import fnmatch
 import logging
+import os
 import subprocess
 import sys
 
@@ -36,16 +38,28 @@ def get_matchers(filename):
         return []
 
 
-def main():
-    """Main entry point for choosr application."""
-    profile = "Default"
-
-    if len(sys.argv) == 1:
-        logging.info("No URL provided - launching Chrome")
-        launch_chrome(profile)
+def init_config():
+    """Initialize choosr config file if it doesn't exist."""
+    config_path = os.path.expanduser("~/.choosr.yaml")
+    
+    if os.path.exists(config_path):
+        print(f"Config file already exists at {config_path}")
         return
+    
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            f.write("")  # Create empty file
+        print(f"Created config file at {config_path}")
+        logging.info("Created config file at %s", config_path)
+    except OSError as e:
+        print(f"Error creating config file: {e}")
+        logging.error("Error creating config file: %s", e)
 
-    url = sys.argv[1]
+
+def handle_url(url):
+    """Handle URL opening with profile selection."""
+    profile = "Default"
+    
     parsed = tldextract.extract(url)
     domain = parsed.registered_domain
     logging.info("url=%s => parsed=%s => domain=%s", url, parsed, domain)
@@ -57,6 +71,29 @@ def main():
             break
 
     launch_chrome(profile, url=url)
+
+
+def main():
+    """Main entry point for choosr application."""
+    parser = argparse.ArgumentParser(description="Browser profile chooser")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    
+    # Init subcommand
+    subparsers.add_parser("init", help="Initialize choosr config file")
+    
+    # URL argument for default behavior
+    parser.add_argument("url", nargs="?", help="URL to open")
+    
+    args = parser.parse_args()
+    
+    if args.command == "init":
+        init_config()
+    elif args.url:
+        handle_url(args.url)
+    else:
+        # No URL provided - launch Chrome with default profile
+        logging.info("No URL provided - launching Chrome")
+        launch_chrome("Default")
 
 if __name__ == "__main__":
     main()
