@@ -89,12 +89,17 @@ def init_config():
     # Get Chrome profiles
     chrome_profiles = get_chrome_profiles()
     
-    # Create config structure
+    # Create config structure with profile names as keys
     config = {
-        'browser_profiles': {
-            'chrome': chrome_profiles
-        }
+        'browser_profiles': {}
     }
+    
+    # Add each Chrome profile with name as key
+    for profile in chrome_profiles:
+        config['browser_profiles'][profile['name']] = {
+            'directory': profile['directory'],
+            'browser': 'chrome'
+        }
     
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
