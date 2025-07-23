@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 import fnmatch
+import json
 import logging
 import os
 import subprocess
 import sys
 
 import tldextract
+import yaml
 
 logging.basicConfig(level=logging.INFO, filename='log.txt')
 
@@ -38,6 +40,47 @@ def get_matchers(filename):
         return []
 
 
+def get_chrome_profiles():
+    """Query Chrome profiles from the filesystem."""
+    chrome_config_dir = os.path.expanduser("~/.config/google-chrome")
+    profiles = []
+    
+    if not os.path.exists(chrome_config_dir):
+        logging.warning("Chrome config directory not found at %s", chrome_config_dir)
+        return profiles
+    
+    try:
+        # Look for profile directories
+        for item in os.listdir(chrome_config_dir):
+            profile_path = os.path.join(chrome_config_dir, item)
+            if os.path.isdir(profile_path):
+                # Check if it's a profile directory (has Preferences file)
+                prefs_file = os.path.join(profile_path, "Preferences")
+                if os.path.exists(prefs_file):
+                    profile_name = item
+                    display_name = item
+                    
+                    # Try to get the display name from Preferences
+                    try:
+                        with open(prefs_file, 'r', encoding='utf-8') as f:
+                            prefs = json.load(f)
+                            profile_info = prefs.get('profile', {})
+                            if 'name' in profile_info:
+                                display_name = profile_info['name']
+                    except (json.JSONDecodeError, OSError):
+                        # Fall back to directory name if we can't read preferences
+                        pass
+                    
+                    profiles.append({
+                        'directory': profile_name,
+                        'name': display_name
+                    })
+    except OSError as e:
+        logging.error("Error reading Chrome profiles: %s", e)
+    
+    return profiles
+
+
 def init_config():
     """Initialize choosr config file if it doesn't exist."""
     config_path = os.path.expanduser("~/.choosr.yaml")
@@ -46,11 +89,25 @@ def init_config():
         print(f"Config file already exists at {config_path}")
         return
     
+    # Get Chrome profiles
+    chrome_profiles = get_chrome_profiles()
+    
+    # Create config structure
+    config = {
+        'browser_profiles': {
+            'chrome': chrome_profiles
+        }
+    }
+    
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
-            f.write("")  # Create empty file
+            yaml.dump(config, f, default_flow_style=False, indent=2)
         print(f"Created config file at {config_path}")
-        logging.info("Created config file at %s", config_path)
+        if chrome_profiles:
+            print(f"Found {len(chrome_profiles)} Chrome profiles")
+        else:
+            print("No Chrome profiles found")
+        logging.info("Created config file at %s with %d Chrome profiles", config_path, len(chrome_profiles))
     except OSError as e:
         print(f"Error creating config file: {e}")
         logging.error("Error creating config file: %s", e)

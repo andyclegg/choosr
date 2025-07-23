@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 tldextract = "^3.5.0"
+pyyaml = "^6.0.2"
 
 [tool.poetry.scripts]
 'choosr' = 'choosr:main'
