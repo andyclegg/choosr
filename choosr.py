@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import fnmatch
-import json
 import logging
 import os
-import subprocess
 import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -12,25 +10,46 @@ from tkinter import messagebox, ttk
 import tldextract
 import yaml
 
+from browser import browser_registry, Profile
+from chrome import ChromeBrowser
+
 logging.basicConfig(level=logging.INFO, filename='log.txt')
 
-def launch_chrome(profile_dir, url=None):
-    """Launch Chrome with the specified profile directory and optional URL."""
-    command = ["/usr/bin/google-chrome"]
+def initialize_browsers():
+    """Initialize and register all available browsers."""
+    # Register Chrome browser
+    chrome = ChromeBrowser()
+    browser_registry.register(chrome)
+    logging.info("Registered browsers: %s", [b.display_name for b in browser_registry.get_available_browsers()])
+
+def launch_browser(profile_name, url=None):
+    """Launch browser with the specified profile and optional URL."""
+    # Find the profile in the browser registry
+    for browser in browser_registry.get_available_browsers():
+        profile = browser.get_profile_by_name(profile_name)
+        if profile:
+            logging.info("Launching %s with profile: %s", browser.display_name, profile_name)
+            browser.launch(profile, url)
+            return
     
-    # Handle incognito mode (when profile_dir is None)
-    if profile_dir is None:
-        command.append("--incognito")
-        logging.info("Launching Chrome in incognito mode")
-    else:
-        command.append(f"--profile-directory={profile_dir}")
-        logging.info("Launching Chrome with profile directory: %s", profile_dir)
+    # Fallback: try to find any profile with matching name across all browsers
+    all_profiles = browser_registry.get_all_profiles()
+    for profile in all_profiles:
+        if profile.name == profile_name:
+            browser = browser_registry.get_browser(profile.browser)
+            if browser:
+                logging.info("Launching %s with profile: %s", browser.display_name, profile_name)
+                browser.launch(profile, url)
+                return
     
-    if url is not None:
-        command.append(url)
-    
-    logging.info("Command: %s", str(command))
-    subprocess.run(command, check=False)
+    logging.error("Profile not found: %s", profile_name)
+    # Fallback to default Chrome profile
+    chrome = browser_registry.get_browser('chrome')
+    if chrome:
+        default_profiles = chrome.discover_profiles()
+        if default_profiles:
+            logging.info("Falling back to default Chrome profile")
+            chrome.launch(default_profiles[0], url)
 
 def load_config():
     """Load choosr configuration from YAML file."""
@@ -200,20 +219,40 @@ def show_profile_selector(url, domain, profiles):
     profile_var = tk.StringVar()
     
     # Create radio buttons for each profile
-    # Sort profiles with Chrome Incognito Mode always last
+    # Sort profiles with private mode profiles always last
     profile_names = list(profiles.keys())
-    regular_profiles = [name for name in profile_names if name != "Chrome Incognito Mode"]
-    regular_profiles.sort()
+    regular_profiles = []
+    private_profiles = []
     
-    # Add Chrome Incognito Mode at the end if it exists
-    if "Chrome Incognito Mode" in profile_names:
-        sorted_profiles = regular_profiles + ["Chrome Incognito Mode"]
-    else:
-        sorted_profiles = regular_profiles
+    # Load browser profiles to check which are private
+    config = load_config()
+    browser_profiles_config = config.get('browser_profiles', {})
+    
+    for name in profile_names:
+        profile_config = browser_profiles_config.get(name, {})
+        if profile_config.get('is_private', False):
+            private_profiles.append(name)
+        else:
+            regular_profiles.append(name)
+    
+    regular_profiles.sort()
+    private_profiles.sort()
+    sorted_profiles = regular_profiles + private_profiles
     
     for profile_name in sorted_profiles:
-        # Use different styling for Chrome Incognito Mode
-        if profile_name == "Chrome Incognito Mode":
+        # Use different styling for private mode profiles
+        profile_config = browser_profiles_config.get(profile_name, {})
+        is_private = profile_config.get('is_private', False)
+        browser_type = profile_config.get('browser', 'unknown')
+        
+        # Get browser display name
+        browser = browser_registry.get_browser(browser_type)
+        browser_display = browser.display_name if browser else browser_type.title()
+        
+        # Format profile text with browser type
+        profile_text = f"{profile_name} [{browser_display}]"
+        
+        if is_private:
             # Create a frame to hold both radio button and colored text
             incognito_frame = ttk.Frame(profile_container)
             incognito_frame.pack(anchor="w", pady=2, fill="x")
@@ -230,7 +269,7 @@ def show_profile_selector(url, domain, profiles):
             # Add red colored label next to the radio button
             incognito_label = tk.Label(
                 incognito_frame,
-                text=profile_name,
+                text=profile_text,
                 foreground="red",
                 font=('Arial', 9)
             )
@@ -244,13 +283,13 @@ def show_profile_selector(url, domain, profiles):
             incognito_label.pack(side="left", padx=(2, 0))
             
             # Make clicking the label also select the radio button
-            def select_incognito(event=None):
-                profile_var.set(profile_name)
-            incognito_label.bind("<Button-1>", select_incognito)
+            def select_private(event=None, name=profile_name):
+                profile_var.set(name)
+            incognito_label.bind("<Button-1>", select_private)
         else:
             radio_button = ttk.Radiobutton(
                 profile_container,
-                text=profile_name,
+                text=profile_text,
                 variable=profile_var,
                 value=profile_name,
                 padding="5"
@@ -289,41 +328,12 @@ def show_profile_selector(url, domain, profiles):
     return result['selected_profile'], result['domain_pattern'], result['save_choice']
 
 
-def get_chrome_profiles():
-    """Query Chrome profiles from the filesystem."""
-    chrome_config_dir = os.path.expanduser("~/.config/google-chrome")
+def get_all_browser_profiles():
+    """Get all profiles from all available browsers."""
     profiles = []
-    
-    if not os.path.exists(chrome_config_dir):
-        logging.warning("Chrome config directory not found at %s", chrome_config_dir)
-        return profiles
-    
-    # Read profile information from Local State file
-    local_state_file = os.path.join(chrome_config_dir, "Local State")
-    if not os.path.exists(local_state_file):
-        logging.warning("Chrome Local State file not found at %s", local_state_file)
-        return profiles
-    
-    try:
-        with open(local_state_file, 'r', encoding='utf-8') as f:
-            local_state = json.load(f)
-            
-        # Get profile info from Local State
-        profile_info_cache = local_state.get('profile', {}).get('info_cache', {})
-        
-        for profile_dir, profile_info in profile_info_cache.items():
-            # Verify the profile directory actually exists
-            profile_path = os.path.join(chrome_config_dir, profile_dir)
-            if os.path.isdir(profile_path):
-                display_name = profile_info.get('name', profile_dir)
-                profiles.append({
-                    'directory': profile_dir,
-                    'name': display_name
-                })
-                
-    except (json.JSONDecodeError, OSError) as e:
-        logging.error("Error reading Chrome Local State: %s", e)
-    
+    for browser in browser_registry.get_available_browsers():
+        browser_profiles = browser.get_all_profiles()
+        profiles.extend(browser_profiles)
     return profiles
 
 
@@ -335,8 +345,8 @@ def init_config():
         print(f"Config file already exists at {config_path}")
         return
     
-    # Get Chrome profiles
-    chrome_profiles = get_chrome_profiles()
+    # Get all profiles from all available browsers
+    all_profiles = get_all_browser_profiles()
     
     # Create config structure with profile names as keys
     config = {
@@ -344,28 +354,31 @@ def init_config():
         'urls': []
     }
     
-    # Add each Chrome profile with name as key
-    for profile in chrome_profiles:
-        config['browser_profiles'][profile['name']] = {
-            'directory': profile['directory'],
-            'browser': 'chrome'
+    # Add each profile with name as key
+    for profile in all_profiles:
+        config['browser_profiles'][profile.name] = {
+            'browser': profile.browser,
+            'profile_id': profile.id,
+            'is_private': profile.is_private,
+            'metadata': profile.metadata
         }
-    
-    # Add Chrome Incognito Mode as a special profile
-    config['browser_profiles']['Chrome Incognito Mode'] = {
-        'directory': None,
-        'browser': 'chrome'
-    }
     
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
         print(f"Created config file at {config_path}")
-        if chrome_profiles:
-            print(f"Found {len(chrome_profiles)} Chrome profiles")
-        else:
-            print("No Chrome profiles found")
-        logging.info("Created config file at %s with %d Chrome profiles", config_path, len(chrome_profiles))
+        
+        # Count profiles by browser
+        browser_counts = {}
+        for profile in all_profiles:
+            browser_counts[profile.browser] = browser_counts.get(profile.browser, 0) + 1
+        
+        for browser_name, count in browser_counts.items():
+            browser = browser_registry.get_browser(browser_name)
+            browser_display = browser.display_name if browser else browser_name
+            print(f"Found {count} {browser_display} profiles")
+            
+        logging.info("Created config file at %s with %d total profiles", config_path, len(all_profiles))
     except OSError as e:
         print(f"Error creating config file: {e}")
         logging.error("Error creating config file: %s", e)
@@ -414,23 +427,26 @@ def handle_url(url):
         else:
             logging.warning("No profiles configured")
     
-    # Get profile directory from browser_profiles config
-    if selected_profile_name and selected_profile_name in config.get('browser_profiles', {}):
-        profile_info = config['browser_profiles'][selected_profile_name]
-        selected_profile_dir = profile_info.get('directory', 'Default')
-        if selected_profile_dir is None:
-            logging.info("Using incognito mode")
-        else:
-            logging.info("Using profile directory: %s", selected_profile_dir)
+    # Launch browser with selected profile
+    if selected_profile_name:
+        launch_browser(selected_profile_name, url=url)
     else:
-        logging.info("No matching profile found, using Default")
-        selected_profile_dir = "Default"
-
-    launch_chrome(selected_profile_dir, url=url)
+        logging.info("No profile selected, launching with default")
+        # Fallback to first available profile
+        all_profiles = get_all_browser_profiles()
+        if all_profiles:
+            default_profile = all_profiles[0]
+            logging.info("Using fallback profile: %s", default_profile.name)
+            launch_browser(default_profile.name, url=url)
+        else:
+            logging.error("No browser profiles available")
 
 
 def main():
     """Main entry point for choosr application."""
+    # Initialize browser registry
+    initialize_browsers()
+    
     parser = argparse.ArgumentParser(description="Browser profile chooser")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     

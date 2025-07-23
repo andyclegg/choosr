@@ -1,6 +1,10 @@
 Browser Support
 * Firefox
   * also include incognito or similar
-* Implement via plugins or at least a strong interface
+
+Nicer choice window:
+* Use QML + Qt
+* Display the profile picture / colouring that Chrome uses
+* General nicer layout
 
 Source Application detection - is this possible?
