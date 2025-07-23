@@ -26,7 +26,12 @@ Rectangle {
         // Handle Enter
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             if (window.selectedProfile !== "" && window.domainPattern.trim() !== "") {
-                window.profileSelected(window.selectedProfile, window.domainPattern.trim(), window.rememberPattern)
+                // Setup timer to delay window closing and trigger animation globally
+                selectionDelayTimer.pendingProfileName = window.selectedProfile
+                selectionDelayTimer.pendingDomainPattern = window.domainPattern.trim()
+                selectionDelayTimer.pendingRememberPattern = window.rememberPattern
+                window.animateSelectedProfile = true  // Signal to animate
+                selectionDelayTimer.start()
             }
             event.accepted = true
             return
@@ -86,6 +91,20 @@ Rectangle {
     property bool ctrlKeyPressed: false
     property var profileShortcuts: []  // Array to store first 10 profiles for shortcuts
     property string systemTheme: "light"
+    property bool animateSelectedProfile: false  // Signal to trigger animation on selected profile
+    
+    // Timer for delaying window close after animation
+    Timer {
+        id: selectionDelayTimer
+        interval: 320  // Match total animation duration (80 + 80 + 80 + 80)
+        property string pendingProfileName: ""
+        property string pendingDomainPattern: ""
+        property bool pendingRememberPattern: false
+        
+        onTriggered: {
+            window.profileSelected(pendingProfileName, pendingDomainPattern, pendingRememberPattern)
+        }
+    }
     
     // Watch for profileData changes and rebuild shortcuts
     onProfileDataChanged: {
@@ -196,7 +215,12 @@ Rectangle {
                 text: "URL pattern to remember:"
                 font.pixelSize: 14
                 font.weight: Font.Medium
-                color: textPrimaryColor
+                color: window.rememberPattern ? textPrimaryColor : textSecondaryColor
+                opacity: window.rememberPattern ? 1.0 : 0.6
+                
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
+                }
             }
             
             RowLayout {
@@ -206,10 +230,19 @@ Rectangle {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 40
-                    color: inputBackgroundColor
-                    border.color: domainInput.activeFocus ? primaryColor : dividerColor
-                    border.width: domainInput.activeFocus ? 2 : 1
+                    color: window.rememberPattern ? inputBackgroundColor : dividerColor
+                    border.color: window.rememberPattern && domainInput.activeFocus ? primaryColor : dividerColor
+                    border.width: window.rememberPattern && domainInput.activeFocus ? 2 : 1
                     radius: 8
+                    opacity: window.rememberPattern ? 1.0 : 0.5
+                    
+                    Behavior on opacity {
+                        NumberAnimation { duration: 150 }
+                    }
+                    
+                    Behavior on color {
+                        ColorAnimation { duration: 150 }
+                    }
                     
                     TextInput {
                         id: domainInput
@@ -217,17 +250,20 @@ Rectangle {
                         anchors.margins: 12
                         text: window.domainPattern
                         font.pixelSize: 14
-                        color: textPrimaryColor
-                        selectByMouse: true
+                        color: window.rememberPattern ? textPrimaryColor : textSecondaryColor
+                        selectByMouse: window.rememberPattern
+                        enabled: window.rememberPattern
                         focus: false  // Don't steal focus from global handler
                         
                         onTextChanged: {
-                            window.domainPattern = text
-                            // Check if pattern matches current domain
-                            if (text.trim() !== "" && !matchesPattern(window.currentDomain, text.trim())) {
-                                window.warningVisible = true
-                            } else {
-                                window.warningVisible = false
+                            if (window.rememberPattern) {
+                                window.domainPattern = text
+                                // Check if pattern matches current domain
+                                if (text.trim() !== "" && !matchesPattern(window.currentDomain, text.trim())) {
+                                    window.warningVisible = true
+                                } else {
+                                    window.warningVisible = false
+                                }
                             }
                         }
                     }
@@ -251,12 +287,24 @@ Rectangle {
                             border.width: 2
                             color: rememberCheckbox.checked ? primaryColor : "transparent"
                             
+                            Behavior on border.color {
+                                ColorAnimation { duration: 150 }
+                            }
+                            
+                            Behavior on color {
+                                ColorAnimation { duration: 150 }
+                            }
+                            
                             Text {
                                 text: "✓"
                                 font.pixelSize: 10
                                 color: "white"
                                 anchors.centerIn: parent
-                                visible: rememberCheckbox.checked
+                                opacity: rememberCheckbox.checked ? 1.0 : 0.0
+                                
+                                Behavior on opacity {
+                                    NumberAnimation { duration: 150 }
+                                }
                             }
                         }
                     }
@@ -274,7 +322,7 @@ Rectangle {
                 text: "⚠️ Pattern doesn't match the current URL"
                 font.pixelSize: 12
                 color: errorColor
-                visible: window.warningVisible
+                visible: window.warningVisible && window.rememberPattern
                 Layout.fillWidth: true
             }
         }
@@ -363,12 +411,71 @@ Rectangle {
                                         model: modelData.profiles
                                         
                                         Rectangle {
+                                            id: profileRect
                                             width: parent.width
                                             height: 70
-                                            color: profileMouseArea.containsMouse ? hoverColor : "transparent"
                                             radius: 8
                                             border.color: window.selectedProfile === modelData.name ? primaryColor : "transparent"
                                             border.width: 2
+                                            
+                                            // Animation properties
+                                            property bool isAnimating: false
+                                            property color animationColor: "transparent"
+                                            
+                                            // Final color combines hover, animation, and base states
+                                            color: isAnimating ? animationColor : (profileMouseArea.containsMouse ? hoverColor : "transparent")
+                                            
+                                            SequentialAnimation {
+                                                id: selectionAnimation
+                                                
+                                                onStarted: profileRect.isAnimating = true
+                                                onFinished: profileRect.isAnimating = false
+                                                
+                                                // First flash
+                                                ColorAnimation {
+                                                    target: profileRect
+                                                    property: "animationColor"
+                                                    to: primaryColor
+                                                    duration: 80
+                                                    easing.type: Easing.OutCubic
+                                                }
+                                                
+                                                ColorAnimation {
+                                                    target: profileRect
+                                                    property: "animationColor"
+                                                    to: "transparent"
+                                                    duration: 80
+                                                    easing.type: Easing.InCubic
+                                                }
+                                                
+                                                // Second flash
+                                                ColorAnimation {
+                                                    target: profileRect
+                                                    property: "animationColor"
+                                                    to: primaryColor
+                                                    duration: 80
+                                                    easing.type: Easing.OutCubic
+                                                }
+                                                
+                                                ColorAnimation {
+                                                    target: profileRect
+                                                    property: "animationColor"
+                                                    to: "transparent"
+                                                    duration: 80
+                                                    easing.type: Easing.InCubic
+                                                }
+                                            }
+                                            
+                                            // Watch for global animation trigger
+                                            Connections {
+                                                target: window
+                                                function onAnimateSelectedProfileChanged() {
+                                                    if (window.animateSelectedProfile && window.selectedProfile === modelData.name) {
+                                                        selectionAnimation.start()
+                                                        window.animateSelectedProfile = false  // Reset flag
+                                                    }
+                                                }
+                                            }
                                             
                                             RowLayout {
                                                 anchors.fill: parent
@@ -427,29 +534,21 @@ Rectangle {
                                                     }
                                                 }
                                                 
-                                                // Private mode indicator dot
-                                                Rectangle {
-                                                    width: 8
-                                                    height: 8
-                                                    radius: 4
-                                                    color: errorColor
-                                                    visible: modelData.isPrivate || false
-                                                }
                                                 
                                                 // Keyboard shortcut number (shown when Ctrl is pressed)
-                                                Rectangle {
-                                                    width: 24
-                                                    height: 24
-                                                    radius: 12
+                                                Text {
+                                                    text: getProfileShortcutIndex(modelData.name) >= 0 ? "[" + getProfileShortcutNumber(modelData.name) + "]" : ""
+                                                    font.pixelSize: 14
+                                                    font.weight: Font.Bold
                                                     color: primaryColor
-                                                    visible: window.ctrlKeyPressed && getProfileShortcutIndex(modelData.name) >= 0
+                                                    visible: getProfileShortcutIndex(modelData.name) >= 0
+                                                    opacity: window.ctrlKeyPressed ? 1.0 : 0.0
                                                     
-                                                    Text {
-                                                        anchors.centerIn: parent
-                                                        text: getProfileShortcutNumber(modelData.name)
-                                                        font.pixelSize: 12
-                                                        font.weight: Font.Bold
-                                                        color: "white"
+                                                    Behavior on opacity {
+                                                        NumberAnimation {
+                                                            duration: 200
+                                                            easing.type: Easing.OutCubic
+                                                        }
                                                     }
                                                 }
                                             }
@@ -466,7 +565,12 @@ Rectangle {
                                                     window.selectedProfile = modelData.name
                                                     window.selectedProfileIndex = findProfileIndex(modelData.name)
                                                     if (window.domainPattern.trim() !== "") {
-                                                        window.profileSelected(modelData.name, window.domainPattern.trim(), window.rememberPattern)
+                                                        selectionAnimation.start()
+                                                        // Setup timer to delay window closing
+                                                        selectionDelayTimer.pendingProfileName = modelData.name
+                                                        selectionDelayTimer.pendingDomainPattern = window.domainPattern.trim()
+                                                        selectionDelayTimer.pendingRememberPattern = window.rememberPattern
+                                                        selectionDelayTimer.start()
                                                     }
                                                 }
                                             }
@@ -525,7 +629,13 @@ Rectangle {
             var profileName = window.profileShortcuts[index]
             window.selectedProfile = profileName
             window.selectedProfileIndex = index
-            window.profileSelected(profileName, window.domainPattern.trim(), window.rememberPattern)
+            
+            // Setup timer to delay window closing and trigger animation
+            selectionDelayTimer.pendingProfileName = profileName
+            selectionDelayTimer.pendingDomainPattern = window.domainPattern.trim()
+            selectionDelayTimer.pendingRememberPattern = window.rememberPattern
+            window.animateSelectedProfile = true  // Signal to animate
+            selectionDelayTimer.start()
         }
     }
     
@@ -659,6 +769,13 @@ Rectangle {
             selectedProfile = shortcuts[firstNonPrivateIndex]
             selectedProfileIndex = firstNonPrivateIndex
         }
+    }
+    
+    // Find profile rectangle by name (for animation)
+    function findProfileRectangle(profileName) {
+        // This is a simplified approach - in QML it's complex to find dynamic components
+        // The animation will be handled by the MouseArea that triggered the selection
+        return null
     }
     
     // Initialize when component is completed
