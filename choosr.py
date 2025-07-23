@@ -16,15 +16,8 @@ logging.basicConfig(level=logging.INFO, filename='log.txt')
 
 def launch_chrome(profile_dir, url=None):
     """Launch Chrome with the specified profile directory and optional URL."""
-    # Profile dirs are in ~/.var/app/com.google.Chrome/config/google-chrome/
     command = [
-        "/usr/bin/flatpak",
-        "run",
-        "--branch=stable",
-        "--arch=x86_64",
-        "--command=/app/bin/chrome",
-        "--file-forwarding",
-        "com.google.Chrome",
+        "/usr/bin/google-chrome",
         f"--profile-directory={profile_dir}"
     ]
     if url is not None:
@@ -76,7 +69,7 @@ def show_profile_selector(url, domain, profiles):
         messagebox.showerror("Error", "No profiles available")
         return None
     
-    result = {'selected_profile': None, 'domain_pattern': None, 'cancelled': False}
+    result = {'selected_profile': None, 'domain_pattern': None, 'save_choice': False, 'cancelled': False}
     
     def check_domain_match():
         """Check if the domain pattern matches the original URL and show warning."""
@@ -90,15 +83,25 @@ def show_profile_selector(url, domain, profiles):
         """Called when domain entry is modified."""
         root.after_idle(check_domain_match)
     
-    def on_select():
+    def on_remember_and_launch():
         selection = profile_var.get()
         domain_pattern = domain_var.get().strip()
         if selection and domain_pattern:
             result['selected_profile'] = selection
             result['domain_pattern'] = domain_pattern
+            result['save_choice'] = True
         root.quit()
     
-    def on_cancel():
+    def on_launch_only():
+        selection = profile_var.get()
+        domain_pattern = domain_var.get().strip()
+        if selection and domain_pattern:
+            result['selected_profile'] = selection
+            result['domain_pattern'] = domain_pattern
+            result['save_choice'] = False
+        root.quit()
+    
+    def on_exit():
         result['cancelled'] = True
         root.quit()
     
@@ -203,8 +206,10 @@ def show_profile_selector(url, domain, profiles):
     button_frame = ttk.Frame(root, padding="10")
     button_frame.pack(fill="x", side="bottom")
     
-    ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side="right", padx=(5, 0))
-    ttk.Button(button_frame, text="OK", command=on_select).pack(side="right")
+    # Create three buttons with appropriate spacing
+    ttk.Button(button_frame, text="Exit", command=on_exit).pack(side="right", padx=(5, 0))
+    ttk.Button(button_frame, text="Launch", command=on_launch_only).pack(side="right", padx=(5, 0))
+    ttk.Button(button_frame, text="Remember choice and launch", command=on_remember_and_launch).pack(side="right", padx=(5, 0))
     
     # Set first profile as default
     if profiles:
@@ -226,7 +231,7 @@ def show_profile_selector(url, domain, profiles):
     if result['cancelled']:
         return None
     
-    return result['selected_profile'], result['domain_pattern']
+    return result['selected_profile'], result['domain_pattern'], result['save_choice']
 
 
 def get_chrome_profiles():
@@ -334,10 +339,14 @@ def handle_url(url):
             selection_result = show_profile_selector(url, domain, browser_profiles)
             
             if selection_result:
-                selected_profile_name, domain_pattern = selection_result
-                # Save the selection to config with the edited domain pattern
-                save_url_match(domain_pattern, selected_profile_name)
-                logging.info("User selected profile: %s for pattern: %s", selected_profile_name, domain_pattern)
+                selected_profile_name, domain_pattern, save_choice = selection_result
+                
+                # Only save to config if user chose "Remember choice and launch"
+                if save_choice:
+                    save_url_match(domain_pattern, selected_profile_name)
+                    logging.info("User selected profile: %s for pattern: %s (saved to config)", selected_profile_name, domain_pattern)
+                else:
+                    logging.info("User selected profile: %s for pattern: %s (not saved)", selected_profile_name, domain_pattern)
             else:
                 logging.info("User cancelled profile selection")
                 return
