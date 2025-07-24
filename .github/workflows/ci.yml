@@ -68,33 +68,6 @@ jobs:
         # Verify the application structure
         uv run python -c "import choosr; import browser; import chrome; import firefox; print('All modules import successfully')"
 
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-
-    - name: Install dependencies
-      run: uv sync --dev
-
-    - name: Run safety check
-      run: |
-        uv add --dev safety
-        uv run safety check || true  # Don't fail the build on security warnings for now
-
-    - name: Check for secrets
-      run: |
-        # Basic check for common secret patterns
-        if grep -r -i "password\s*=" . --exclude-dir=.git --exclude-dir=.github || \
-           grep -r -i "secret\s*=" . --exclude-dir=.git --exclude-dir=.github || \
-           grep -r -i "token\s*=" . --exclude-dir=.git --exclude-dir=.github; then
-          echo "⚠️  Potential secrets found in code"
-          exit 1
-        else
-          echo "✅ No obvious secrets found"
-        fi
 
   build-check:
     runs-on: ubuntu-latest

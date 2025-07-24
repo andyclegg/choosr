@@ -204,6 +204,7 @@ def handle_url(url):
         if browser_profiles:
             # Lazy import this, only when needed
             from qt_interface import show_qt_profile_selector
+
             selection_result = show_qt_profile_selector(url, domain, browser_profiles)
 
             if selection_result:
