@@ -280,9 +280,8 @@ class TestUrlHandling:
 
         with (
             patch.object(choosr, "load_config", return_value=config),
-            patch.object(
-                choosr,
-                "show_qt_profile_selector",
+            patch(
+                "qt_interface.show_qt_profile_selector",
                 return_value=("Default", "*.example.com", True),
             ),
             patch.object(choosr, "save_url_match") as mock_save,
@@ -304,7 +303,7 @@ class TestUrlHandling:
 
         with (
             patch.object(choosr, "load_config", return_value=config),
-            patch.object(choosr, "show_qt_profile_selector", return_value=None),
+            patch("qt_interface.show_qt_profile_selector", return_value=None),
             patch.object(choosr, "launch_browser") as mock_launch,
         ):
             choosr.handle_url("https://example.com")
