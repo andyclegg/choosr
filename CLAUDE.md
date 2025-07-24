@@ -10,7 +10,7 @@ Choosr is a browser profile selector application that allows users to choose whi
 
 **Install dependencies:**
 ```bash
-poetry install
+uv sync
 ```
 
 **Install as system application:**
@@ -21,13 +21,13 @@ poetry install
 
 **Run during development:**
 ```bash
-poetry run choosr init      # Initialize config file
-poetry run choosr url <URL> # Launch URL with profile selector
+uv run choosr init      # Initialize config file
+uv run choosr url <URL> # Launch URL with profile selector
 ```
 
 **Test the application:**
 ```bash
-poetry run choosr --help    # Show help
+uv run choosr --help    # Show help
 ~/.local/share/choosr/choosr-launcher url <URL>  # Test installed version
 ```
 

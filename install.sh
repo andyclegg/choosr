@@ -37,22 +37,28 @@ check_directory() {
     fi
 }
 
-# Check if Poetry is available
-check_poetry() {
-    if ! command -v poetry &> /dev/null; then
-        print_error "Poetry not found. Please install Poetry first."
+# Check if UV is available
+check_uv() {
+    if ! command -v uv &> /dev/null; then
+        print_error "UV not found. Please install UV first: 'curl -LsSf https://astral.sh/uv/install.sh | sh'"
         exit 1
     fi
     
-    if ! poetry check &> /dev/null; then
-        print_error "Poetry project not properly configured. Run 'poetry install' first."
+    if [[ ! -f "pyproject.toml" ]]; then
+        print_error "pyproject.toml not found. Not a valid UV project."
         exit 1
     fi
 }
 
-# Get Poetry virtual environment path
+# Get UV virtual environment path
 get_venv_path() {
-    poetry env info --path
+    # UV creates virtual environments in .venv by default
+    if [[ -d ".venv" ]]; then
+        echo "$(pwd)/.venv"
+    else
+        print_error "UV virtual environment not found. Run 'uv sync' first."
+        exit 1
+    fi
 }
 
 # Create installation directory
@@ -189,7 +195,7 @@ main() {
     
     # Pre-flight checks
     check_directory
-    check_poetry
+    check_uv
     
     # Get environment info
     local venv_path

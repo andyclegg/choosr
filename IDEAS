@@ -1,4 +1,7 @@
 Better app icon
+Make init implicit
+ - automatically run if no config file
+ - have profile_scan as a command that can be run at any time. Replace the profiles section, and remove any matches that point to removed profiles
 
 Advanced Features
 * Source Application detection - is this possible?

@@ -1,20 +1,24 @@
-[tool.poetry]
+[project]
 name = "choosr"
 version = "0.1.0"
-description = ""
-authors = ["Andy Clegg <andrew.clegg@gmx.com>"]
+description = "Browser profile selector application"
+authors = [
+    {name = "Andy Clegg", email = "andrew.clegg@gmx.com"}
+]
 readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "tldextract>=3.5.0",
+    "pyyaml>=6.0.2",
+    "pyside6>=6.9.1",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.14"
-tldextract = "^3.5.0"
-pyyaml = "^6.0.2"
-pyside6 = "^6.9.1"
-
-[tool.poetry.scripts]
-'choosr' = 'choosr:main'
-
+[project.scripts]
+choosr = "choosr:main"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
