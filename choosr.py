@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import fnmatch
-import logging
 import os
 import sys
 
@@ -12,8 +11,6 @@ from browser import browser_registry, Profile
 from chrome import ChromeBrowser
 from firefox import FirefoxBrowser
 from qt_interface import show_qt_profile_selector
-
-logging.basicConfig(level=logging.INFO, filename='log.txt')
 
 def initialize_browsers():
     """Initialize and register all available browsers."""
@@ -26,35 +23,37 @@ def initialize_browsers():
     browser_registry.register(firefox)
     
     available_browsers = browser_registry.get_available_browsers()
-    logging.info("Registered browsers: %s", [b.display_name for b in available_browsers])
 
-def launch_browser(profile_name, url=None):
-    """Launch browser with the specified profile and optional URL."""
-    # Find the profile in the browser registry
+def _find_profile_by_name(profile_name):
+    """Find profile by name across all browsers."""
+    # First try browser-specific lookup (more efficient)
     for browser in browser_registry.get_available_browsers():
         profile = browser.get_profile_by_name(profile_name)
         if profile:
-            logging.info("Launching %s with profile: %s", browser.display_name, profile_name)
-            browser.launch(profile, url)
-            return
+            return profile, browser
     
-    # Fallback: try to find any profile with matching name across all browsers
+    # Fallback: search all profiles
     all_profiles = browser_registry.get_all_profiles()
     for profile in all_profiles:
         if profile.name == profile_name:
             browser = browser_registry.get_browser(profile.browser)
             if browser:
-                logging.info("Launching %s with profile: %s", browser.display_name, profile_name)
-                browser.launch(profile, url)
-                return
+                return profile, browser
     
-    logging.error("Profile not found: %s", profile_name)
+    return None, None
+
+def launch_browser(profile_name, url=None):
+    """Launch browser with the specified profile and optional URL."""
+    profile, browser = _find_profile_by_name(profile_name)
+    
+    if profile and browser:
+        browser.launch(profile, url)
+        return
     # Fallback to default Chrome profile
     chrome = browser_registry.get_browser('chrome')
     if chrome:
         default_profiles = chrome.discover_profiles()
         if default_profiles:
-            logging.info("Falling back to default Chrome profile")
             chrome.launch(default_profiles[0], url)
 
 def load_config():
@@ -62,7 +61,6 @@ def load_config():
     config_path = os.path.expanduser("~/.choosr.yaml")
     
     if not os.path.exists(config_path):
-        logging.warning("Config file not found at %s", config_path)
         return {'browser_profiles': {}, 'urls': []}
     
     try:
@@ -79,8 +77,24 @@ def load_config():
         print(f"Error: Cannot read config file {config_path}")
         print(f"File system error: {e}")
         sys.exit(1)
-        return {'browser_profiles': {}, 'urls': []}
 
+
+def _handle_yaml_write_error(config_path, operation_description):
+    """Common error handling for YAML write operations."""
+    def error_handler(func):
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except yaml.YAMLError as e:
+                print(f"Error: Cannot write YAML to config file {config_path}")
+                print(f"YAML serialization error: {e}")
+                print(f"The {operation_description} could not be saved.")
+            except OSError as e:
+                print(f"Error: Cannot write to config file {config_path}")
+                print(f"File system error: {e}")
+                print("Please check file permissions and disk space.")
+        return wrapper
+    return error_handler
 
 def save_url_match(domain, profile_name):
     """Save a new URL match to the config file."""
@@ -95,25 +109,14 @@ def save_url_match(domain, profile_name):
     
     config.setdefault('urls', []).append(new_match)
     
-    try:
+    @_handle_yaml_write_error(config_path, "configuration")
+    def write_config():
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
-        logging.info("Saved URL match: %s -> %s", domain, profile_name)
-    except yaml.YAMLError as e:
-        print(f"Error: Cannot write YAML to config file {config_path}")
-        print(f"YAML serialization error: {e}")
-        print("The configuration could not be saved.")
-        logging.error("YAML serialization error for config file %s: %s", config_path, e)
-    except OSError as e:
-        print(f"Error: Cannot write to config file {config_path}")
-        print(f"File system error: {e}")
-        print("Please check file permissions and disk space.")
-        logging.error("Cannot write to config file %s: %s", config_path, e)
+    
+    write_config()
 
 
-def show_profile_selector(url, domain, profiles):
-    """Show GUI dialog to select a profile for the URL."""
-    return show_qt_profile_selector(url, domain, profiles)
 
 
 def get_all_browser_profiles():
@@ -161,7 +164,8 @@ def init_config():
             'is_private': profile.is_private,
         }
     
-    try:
+    @_handle_yaml_write_error(config_path, "configuration")
+    def write_config():
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
         print(f"Created config file at {config_path}")
@@ -175,18 +179,8 @@ def init_config():
             browser = browser_registry.get_browser(browser_name)
             browser_display = browser.display_name if browser else browser_name
             print(f"Found {count} {browser_display} profiles")
-            
-        logging.info("Created config file at %s with %d total profiles", config_path, len(all_profiles))
-    except yaml.YAMLError as e:
-        print(f"Error: Cannot write YAML to config file {config_path}")
-        print(f"YAML serialization error: {e}")
-        print("The configuration could not be created.")
-        logging.error("YAML serialization error creating config file %s: %s", config_path, e)
-    except OSError as e:
-        print(f"Error: Cannot create config file {config_path}")
-        print(f"File system error: {e}")
-        print("Please check directory permissions and disk space.")
-        logging.error("Cannot create config file %s: %s", config_path, e)
+    
+    write_config()
 
 
 def handle_url(url):
@@ -195,7 +189,6 @@ def handle_url(url):
     
     parsed = tldextract.extract(url)
     domain = parsed.registered_domain
-    logging.info("url=%s => parsed=%s => domain=%s", url, parsed, domain)
 
     # Find matching profile from config
     selected_profile_name = None
@@ -207,15 +200,13 @@ def handle_url(url):
         
         if fnmatch.fnmatch(domain, match_pattern):
             selected_profile_name = profile_name
-            logging.info("%s matched %s -> %s", url, match_pattern, profile_name)
             break
     
     # If no match found, show GUI selector
     if not selected_profile_name:
         browser_profiles = config.get('browser_profiles', {})
         if browser_profiles:
-            logging.info("No match found for %s, showing profile selector", domain)
-            selection_result = show_profile_selector(url, domain, browser_profiles)
+            selection_result = show_qt_profile_selector(url, domain, browser_profiles)
             
             if selection_result:
                 selected_profile_name, domain_pattern, save_choice = selection_result
@@ -223,28 +214,18 @@ def handle_url(url):
                 # Only save to config if user chose "Remember choice and launch"
                 if save_choice:
                     save_url_match(domain_pattern, selected_profile_name)
-                    logging.info("User selected profile: %s for pattern: %s (saved to config)", selected_profile_name, domain_pattern)
-                else:
-                    logging.info("User selected profile: %s for pattern: %s (not saved)", selected_profile_name, domain_pattern)
             else:
-                logging.info("User cancelled profile selection")
                 return
-        else:
-            logging.warning("No profiles configured")
     
     # Launch browser with selected profile
     if selected_profile_name:
         launch_browser(selected_profile_name, url=url)
     else:
-        logging.info("No profile selected, launching with default")
         # Fallback to first available profile
         all_profiles = get_all_browser_profiles()
         if all_profiles:
             default_profile = all_profiles[0]
-            logging.info("Using fallback profile: %s", default_profile.name)
             launch_browser(default_profile.name, url=url)
-        else:
-            logging.error("No browser profiles available")
 
 
 def main():

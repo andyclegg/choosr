@@ -6,7 +6,6 @@ for Google Chrome, based on the existing Chrome-specific code in choosr.py.
 """
 
 import json
-import logging
 import os
 import subprocess
 from typing import List, Optional
@@ -16,6 +15,38 @@ from browser import Browser, Profile, ProfileIcon
 
 class ChromeBrowser(Browser):
     """Google Chrome browser implementation."""
+    
+    # Chrome avatar icon color mapping
+    AVATAR_COLORS = {
+        'chrome-avatar-generic': "#4285F4",
+        'chrome://theme/IDR_PROFILE_AVATAR_26': "#546E7A",
+        'chrome://theme/IDR_PROFILE_AVATAR_0': "#EA4335",
+        'chrome://theme/IDR_PROFILE_AVATAR_1': "#34A853", 
+        'chrome://theme/IDR_PROFILE_AVATAR_2': "#FBBC04",
+        'chrome://theme/IDR_PROFILE_AVATAR_3': "#FF6D01",
+        'chrome://theme/IDR_PROFILE_AVATAR_4': "#9AA0A6",
+        'chrome://theme/IDR_PROFILE_AVATAR_5': "#4285F4",
+        'chrome://theme/IDR_PROFILE_AVATAR_6': "#0F9D58",
+        'chrome://theme/IDR_PROFILE_AVATAR_7': "#F4B400",
+        'chrome://theme/IDR_PROFILE_AVATAR_8': "#DB4437",
+        'chrome://theme/IDR_PROFILE_AVATAR_9': "#673AB7",
+        'chrome://theme/IDR_PROFILE_AVATAR_10': "#FF5722",
+        'chrome://theme/IDR_PROFILE_AVATAR_11': "#607D8B",
+        'chrome://theme/IDR_PROFILE_AVATAR_12': "#795548",
+        'chrome://theme/IDR_PROFILE_AVATAR_13': "#3F51B5",
+        'chrome://theme/IDR_PROFILE_AVATAR_14': "#E91E63",
+        'chrome://theme/IDR_PROFILE_AVATAR_15': "#00BCD4",
+        'chrome://theme/IDR_PROFILE_AVATAR_16': "#CDDC39",
+        'chrome://theme/IDR_PROFILE_AVATAR_17': "#FF9800",
+        'chrome://theme/IDR_PROFILE_AVATAR_18': "#9C27B0",
+        'chrome://theme/IDR_PROFILE_AVATAR_19': "#2196F3",
+        'chrome://theme/IDR_PROFILE_AVATAR_20': "#009688",
+        'chrome://theme/IDR_PROFILE_AVATAR_21': "#8BC34A",
+        'chrome://theme/IDR_PROFILE_AVATAR_22': "#FFC107",
+        'chrome://theme/IDR_PROFILE_AVATAR_23': "#FF5722",
+        'chrome://theme/IDR_PROFILE_AVATAR_24': "#6D4C41",
+        'chrome://theme/IDR_PROFILE_AVATAR_25': "#546E7A"
+    }
     
     @property
     def name(self) -> str:
@@ -43,13 +74,11 @@ class ChromeBrowser(Browser):
         profiles = []
         
         if not os.path.exists(chrome_config_dir):
-            logging.warning("Chrome config directory not found at %s", chrome_config_dir)
             return profiles
         
         # Read profile information from Local State file
         local_state_file = os.path.join(chrome_config_dir, "Local State")
         if not os.path.exists(local_state_file):
-            logging.warning("Chrome Local State file not found at %s", local_state_file)
             return profiles
         
         try:
@@ -75,8 +104,8 @@ class ChromeBrowser(Browser):
                         icon=profile_icon
                     ))
                     
-        except (json.JSONDecodeError, OSError) as e:
-            logging.error("Error reading Chrome Local State: %s", e)
+        except (json.JSONDecodeError, OSError):
+            pass
         
         return profiles
     
@@ -109,7 +138,6 @@ class ChromeBrowser(Browser):
         if url is not None:
             command.append(url)
         
-        logging.info("Chrome launch command: %s", str(command))
         subprocess.run(command, check=False)
     
     def is_available(self) -> bool:
@@ -234,65 +262,21 @@ class ChromeBrowser(Browser):
         if theme_colors:
             # Chrome stores theme colors as signed integers, convert to hex
             if 'theme_frame' in theme_colors:
-                color_int = theme_colors['theme_frame']
-                if color_int < 0:  # Handle negative integers
-                    color_int = color_int + 2**32
-                background_color = f"#{color_int:06X}"
+                background_color = self._convert_chrome_color_to_hex(theme_colors['theme_frame'])
             
             if 'theme_text' in theme_colors:
-                color_int = theme_colors['theme_text'] 
-                if color_int < 0:
-                    color_int = color_int + 2**32
-                text_color = f"#{color_int:06X}"
+                text_color = self._convert_chrome_color_to_hex(theme_colors['theme_text'])
         
         # Try to extract background color from profile_highlight_color or profile_color_seed
         if not background_color:
             if 'profile_highlight_color' in profile_info:
-                color_int = profile_info['profile_highlight_color']
-                if color_int < 0:
-                    color_int = color_int + 2**32
-                background_color = f"#{color_int:06X}"
+                background_color = self._convert_chrome_color_to_hex(profile_info['profile_highlight_color'])
             elif 'default_avatar_fill_color' in profile_info:
-                color_int = profile_info['default_avatar_fill_color']
-                if color_int < 0:
-                    color_int = color_int + 2**32
-                background_color = f"#{color_int:06X}"
+                background_color = self._convert_chrome_color_to_hex(profile_info['default_avatar_fill_color'])
         
-        # Chrome avatar icon color mapping (fallback)
-        chrome_colors = {
-            'chrome-avatar-generic': "#4285F4",
-            'chrome://theme/IDR_PROFILE_AVATAR_26': "#546E7A",
-            'chrome://theme/IDR_PROFILE_AVATAR_0': "#EA4335",
-            'chrome://theme/IDR_PROFILE_AVATAR_1': "#34A853", 
-            'chrome://theme/IDR_PROFILE_AVATAR_2': "#FBBC04",
-            'chrome://theme/IDR_PROFILE_AVATAR_3': "#FF6D01",
-            'chrome://theme/IDR_PROFILE_AVATAR_4': "#9AA0A6",
-            'chrome://theme/IDR_PROFILE_AVATAR_5': "#4285F4",
-            'chrome://theme/IDR_PROFILE_AVATAR_6': "#0F9D58",
-            'chrome://theme/IDR_PROFILE_AVATAR_7': "#F4B400",
-            'chrome://theme/IDR_PROFILE_AVATAR_8': "#DB4437",
-            'chrome://theme/IDR_PROFILE_AVATAR_9': "#673AB7",
-            'chrome://theme/IDR_PROFILE_AVATAR_10': "#FF5722",
-            'chrome://theme/IDR_PROFILE_AVATAR_11': "#607D8B",
-            'chrome://theme/IDR_PROFILE_AVATAR_12': "#795548",
-            'chrome://theme/IDR_PROFILE_AVATAR_13': "#3F51B5",
-            'chrome://theme/IDR_PROFILE_AVATAR_14': "#E91E63",
-            'chrome://theme/IDR_PROFILE_AVATAR_15': "#00BCD4",
-            'chrome://theme/IDR_PROFILE_AVATAR_16': "#CDDC39",
-            'chrome://theme/IDR_PROFILE_AVATAR_17': "#FF9800",
-            'chrome://theme/IDR_PROFILE_AVATAR_18': "#9C27B0",
-            'chrome://theme/IDR_PROFILE_AVATAR_19': "#2196F3",
-            'chrome://theme/IDR_PROFILE_AVATAR_20': "#009688",
-            'chrome://theme/IDR_PROFILE_AVATAR_21': "#8BC34A",
-            'chrome://theme/IDR_PROFILE_AVATAR_22': "#FFC107",
-            'chrome://theme/IDR_PROFILE_AVATAR_23': "#FF5722",
-            'chrome://theme/IDR_PROFILE_AVATAR_24': "#6D4C41",
-            'chrome://theme/IDR_PROFILE_AVATAR_25': "#546E7A"
-        }
-        
-        # Use theme color if available, otherwise use avatar color
+        # Use theme color if available, otherwise use avatar color (fallback)
         if not background_color:
-            background_color = chrome_colors.get(avatar_icon, "#4285F4")
+            background_color = self.AVATAR_COLORS.get(avatar_icon, "#4285F4")
         
         if not text_color:
             text_color = "#FFFFFF"
@@ -321,8 +305,7 @@ class ChromeBrowser(Browser):
             
             return self._get_profile_icon_from_info(profile_info, profile_id)
             
-        except (json.JSONDecodeError, OSError) as e:
-            logging.error("Error reading Chrome Local State for icons: %s", e)
+        except (json.JSONDecodeError, OSError):
             return ProfileIcon()  # Return default
     
     def _get_profile_picture_path(self, profile_info: dict, profile_id: str) -> Optional[str]:
@@ -350,3 +333,9 @@ class ChromeBrowser(Browser):
         
         # Method 3: No actual image file found
         return None
+    
+    def _convert_chrome_color_to_hex(self, color_int):
+        """Convert Chrome's signed integer color to hex string."""
+        if color_int < 0:  # Handle negative integers
+            color_int = color_int + 2**32
+        return f"#{color_int:06X}"

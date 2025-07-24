@@ -141,9 +141,7 @@ class Browser(ABC):
         Returns:
             List of all profiles with private mode profile at the end.
         """
-        profiles = self.discover_profiles()
-        private_profile = self.get_private_mode_profile()
-        return profiles + [private_profile]
+        return self.discover_profiles() + [self.get_private_mode_profile()]
     
     def get_profile_by_id(self, profile_id: str) -> Optional[Profile]:
         """

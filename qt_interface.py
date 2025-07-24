@@ -8,7 +8,6 @@ Requires PySide6 as a hard dependency.
 
 import os
 import sys
-import logging
 from typing import List, Optional, Tuple, Dict, Any
 
 from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt, QEvent
@@ -96,14 +95,11 @@ class ProfileSelectorController(QObject):
             
         # Detect system theme
         system_theme = self._detect_system_theme()
-        logging.info("Detected system theme: %s", system_theme)
         
         # Get screen dimensions - use availableGeometry for proper scaling and taskbar handling
         screen = app.primaryScreen()
         screen_geometry = screen.availableGeometry()
         screen_height = screen_geometry.height()
-        
-        logging.info("Available screen height: %d pixels (logical)", screen_height)
         
         # Create QML view
         self._view = ProfileSelectorView()
@@ -117,7 +113,6 @@ class ProfileSelectorController(QObject):
         # Connect window close handling
         def handle_window_close():
             self._cancelled = True
-            logging.info("Qt window closed by user")
         
         self._view.windowClosed.connect(handle_window_close)
         
@@ -129,7 +124,6 @@ class ProfileSelectorController(QObject):
         self._view.setSource(QUrl.fromLocalFile(qml_file))
         
         if self._view.status() == QQuickView.Error:
-            logging.error("Failed to load QML file: %s", qml_file)
             return None
         
         # Get root object and set properties
@@ -243,14 +237,11 @@ class ProfileSelectorController(QObject):
     def _on_profile_selected(self, profile_name: str, domain_pattern: str, save_choice: bool):
         """Handle profile selection from QML."""
         self._result = (profile_name, domain_pattern, save_choice)
-        logging.info("QML Profile selected: %s, pattern: %s, save: %s", 
-                    profile_name, domain_pattern, save_choice)
     
     @Slot()
     def _on_cancelled(self):
         """Handle cancellation from QML."""
         self._cancelled = True
-        logging.info("QML Profile selection cancelled")
     
 
 
@@ -258,18 +249,5 @@ class ProfileSelectorController(QObject):
 qt_controller = ProfileSelectorController()
 
 
-def show_qt_profile_selector(url: str, domain: str, profiles: Dict[str, Any]) -> Optional[Tuple[str, str, bool]]:
-    """
-    Show the Qt/QML profile selector.
-    
-    This is the main entry point that choosr.py will use to replace the Tkinter interface.
-    
-    Args:
-        url: The URL being opened
-        domain: The extracted domain  
-        profiles: Dictionary of profile configurations from config file
-        
-    Returns:
-        Tuple of (profile_name, domain_pattern, save_choice) or None if cancelled
-    """
-    return qt_controller.show_profile_selector(url, domain, profiles)
+# Direct access to the controller for external use
+show_qt_profile_selector = qt_controller.show_profile_selector
