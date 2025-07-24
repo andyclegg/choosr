@@ -199,12 +199,78 @@ def handle_url(url):
             launch_browser(default_profile.name, url=url)
 
 
+def rescan_browsers():
+    """Rescan browsers, update profiles, and clean up invalid URL entries."""
+    config_path = os.path.expanduser("~/.choosr.yaml")
+    config = load_config()
+
+    # Get fresh profile data from all browsers
+    all_profiles = get_all_browser_profiles()
+
+    # Create new browser_profiles section
+    new_browser_profiles = {}
+    for profile in all_profiles:
+        new_browser_profiles[profile.name] = {
+            "browser": profile.browser,
+            "profile_id": profile.id,
+            "is_private": profile.is_private,
+        }
+
+    # Replace the browser_profiles section
+    config["browser_profiles"] = new_browser_profiles
+
+    # Clean up invalid URL entries
+    valid_profile_names = set(new_browser_profiles.keys())
+    original_url_count = len(config.get("urls", []))
+
+    config["urls"] = [
+        url_entry
+        for url_entry in config.get("urls", [])
+        if url_entry.get("profile") in valid_profile_names
+    ]
+
+    cleaned_url_count = len(config["urls"])
+    removed_urls = original_url_count - cleaned_url_count
+
+    # Save updated config
+    @_handle_yaml_write_error(config_path, "configuration")
+    def write_config():
+        with open(config_path, "w", encoding="utf-8") as f:
+            yaml.dump(config, f, default_flow_style=False, indent=2)
+
+    write_config()
+
+    # Report results
+    browser_counts = {}
+    for profile in all_profiles:
+        browser_counts[profile.browser] = browser_counts.get(profile.browser, 0) + 1
+
+    print(f"Updated browser profiles in {config_path}")
+    for browser_name, count in browser_counts.items():
+        browser = browser_registry.get_browser(browser_name)
+        browser_display = browser.display_name if browser else browser_name
+        print(f"Found {count} {browser_display} profiles")
+
+    if removed_urls > 0:
+        print(f"Removed {removed_urls} URL entries pointing to non-existent profiles")
+    else:
+        print("All URL entries are valid")
+
+
 def main():
     """Main entry point for choosr application."""
     # Initialize browser registry
     initialize_browsers()
 
     parser = argparse.ArgumentParser(description="Browser profile chooser")
+
+    # Add global options
+    parser.add_argument(
+        "--rescan-browsers",
+        action="store_true",
+        help="Rescan browsers and update profile configuration",
+    )
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # URL subcommand
@@ -215,7 +281,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "url":
+    if args.rescan_browsers:
+        rescan_browsers()
+    elif args.command == "url":
         handle_url(args.url)
     else:
         # No command provided - show help

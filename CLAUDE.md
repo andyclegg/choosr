@@ -21,12 +21,14 @@ uv sync
 
 **Run during development:**
 ```bash
-uv run choosr url <URL> # Launch URL with profile selector (creates config if needed)
+uv run choosr url <URL>           # Launch URL with profile selector (creates config if needed)
+uv run choosr --rescan-browsers   # Rescan browsers and update profile configuration
 ```
 
 **Test the application:**
 ```bash
-uv run choosr --help    # Show help
+uv run choosr --help                             # Show help
+uv run choosr --rescan-browsers                  # Update browser profile configuration
 ~/.local/share/choosr/choosr-launcher url <URL>  # Test installed version
 ```
 
