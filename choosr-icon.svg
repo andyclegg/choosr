@@ -1,65 +1,166 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="64" height="64" rx="8" fill="#1976D2"/>
-  
-  <!-- Central globe -->
-  <circle cx="32" cy="32" r="16" fill="#4CAF50"/>
-  <circle cx="32" cy="32" r="16" fill="none" stroke="#2E7D32" stroke-width="1.5"/>
-  
-  <!-- Globe grid lines -->
-  <ellipse cx="32" cy="32" rx="16" ry="8" fill="none" stroke="#2E7D32" stroke-width="1"/>
-  <ellipse cx="32" cy="32" rx="16" ry="4" fill="none" stroke="#2E7D32" stroke-width="0.8"/>
-  <line x1="16" y1="32" x2="48" y2="32" stroke="#2E7D32" stroke-width="1"/>
-  <line x1="32" y1="16" x2="32" y2="48" stroke="#2E7D32" stroke-width="1"/>
-  
-  <!-- Continents (simple shapes) -->
-  <ellipse cx="28" cy="26" rx="3" ry="2" fill="#2E7D32"/>
-  <ellipse cx="36" cy="30" rx="2" ry="3" fill="#2E7D32"/>
-  <ellipse cx="30" cy="38" rx="4" ry="2" fill="#2E7D32"/>
-  
-  <!-- Outgoing arrows representing browser choices -->
-  <!-- Top-right arrow -->
-  <g stroke="#FF9800" stroke-width="2" fill="none">
-    <path d="M44 20 L54 10" />
-    <path d="M50 10 L54 10 L54 14" />
-  </g>
-  
-  <!-- Right arrow -->
-  <g stroke="#FF9800" stroke-width="2" fill="none">
-    <path d="M48 32 L58 32" />
-    <path d="M54 28 L58 32 L54 36" />
-  </g>
-  
-  <!-- Bottom-right arrow -->
-  <g stroke="#FF9800" stroke-width="2" fill="none">
-    <path d="M44 44 L54 54" />
-    <path d="M50 54 L54 54 L54 50" />
-  </g>
-  
-  <!-- Bottom-left arrow -->
-  <g stroke="#FF9800" stroke-width="2" fill="none">
-    <path d="M20 44 L10 54" />
-    <path d="M14 54 L10 54 L10 50" />
-  </g>
-  
-  <!-- Left arrow -->
-  <g stroke="#FF9800" stroke-width="2" fill="none">
-    <path d="M16 32 L6 32" />
-    <path d="M10 28 L6 32 L10 36" />
-  </g>
-  
-  <!-- Top-left arrow -->
-  <g stroke="#FF9800" stroke-width="2" fill="none">
-    <path d="M20 20 L10 10" />
-    <path d="M14 10 L10 10 L10 14" />
-  </g>
-  
-  <!-- Small browser icons at arrow endpoints -->
-  <circle cx="54" cy="10" r="3" fill="#4285F4"/>
-  <circle cx="58" cy="32" r="3" fill="#FF5722"/>
-  <circle cx="54" cy="54" r="3" fill="#9C27B0"/>
-  <circle cx="10" cy="54" r="3" fill="#FF9800"/>
-  <circle cx="6" cy="32" r="3" fill="#E91E63"/>
-  <circle cx="10" cy="10" r="3" fill="#00BCD4"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="640"
+   height="640"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="choosr-icon.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.94592352"
+     inkscape:cx="570.87068"
+     inkscape:cy="271.69216"
+     inkscape:window-width="1920"
+     inkscape:window-height="1052"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <!-- Gradient for globe 3D effect -->
+  <defs
+     id="defs4">
+    <marker
+       style="overflow:visible"
+       id="Dot"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Dot"
+       markerWidth="0.5"
+       markerHeight="0.5"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="M 5,0 C 5,2.76 2.76,5 0,5 -2.76,5 -5,2.76 -5,0 c 0,-2.76 2.3,-5 5,-5 2.76,0 5,2.24 5,5 z"
+         sodipodi:nodetypes="sssss"
+         id="path17" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker9"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, heavy arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
+         id="path9" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker7"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, heavy arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
+         id="path7" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ArrowWideHeavy"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, heavy arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
+         id="path3" />
+    </marker>
+    <linearGradient
+       id="globeGradient"
+       x1="10"
+       y1="10"
+       x2="90"
+       y2="90"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.25,0,0,1.25,-12.5,-12.5)">
+      <stop
+         offset="0.41764659"
+         style="stop-color:#87CEFA;stop-opacity:1"
+         id="stop1" />
+      <stop
+         offset="100%"
+         style="stop-color:#1E90FF;stop-opacity:1"
+         id="stop2" />
+    </linearGradient>
+    <!-- Gradient for arrows to enhance 3D effect -->
+    <linearGradient
+       id="arrowGradient"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="0%">
+      <stop
+         offset="0%"
+         style="stop-color:#00BFFF;stop-opacity:1"
+         id="stop3" />
+      <stop
+         offset="100%"
+         style="stop-color:#4682B4;stop-opacity:1"
+         id="stop4" />
+    </linearGradient>
+  </defs>
+  <!-- Globe -->
+  <circle
+     cx="50"
+     cy="50"
+     fill="url(#globeGradient)"
+     id="circle4"
+     style="fill:url(#globeGradient);stroke-width:1.25"
+     r="50" />
+  <path
+     style="fill:none;stroke:#7100ff;stroke-width:4.6875;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
+     d="M 50.195951,50.340948 C 87.621914,81.540315 47.862627,86.631823 47.862627,86.631823 27.861323,84.156102 57.599958,41.080753 4.4342412,51.148156"
+     id="path4"
+     sodipodi:nodetypes="ccc" />
+  <path
+     style="fill:none;stroke:#08dd00;stroke-width:4.6875;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker7)"
+     d="M 51.240695,49.503722 C 24.813896,54.342432 34.615384,29.280396 34.615384,29.280396 c 0,0 8.064724,-22.096418 40.942928,-13.275434 l 15.260546,4.094294"
+     id="path5"
+     sodipodi:nodetypes="ccsc" />
+  <path
+     style="fill:none;stroke:#ff1c00;stroke-width:4.6875;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker9);marker-start:url(#Dot)"
+     d="M 50.711023,49.224381 C 51.867302,33.036497 47.737739,21.96927 66.403359,33.532045 85.068981,45.094819 45.425184,54.014674 62.108615,71.358835 69.31924,78.855029 94.3192,88.372631 94.3192,88.372631"
+     id="path8"
+     sodipodi:nodetypes="cssc" />
 </svg>
