@@ -8,18 +8,21 @@ the Browser class and implement the required methods.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 
 
 @dataclass
 class ProfileIcon:
     """Represents a profile icon with color and avatar information."""
-    avatar_icon: Optional[str] = None    # Icon identifier/path
+
+    avatar_icon: Optional[str] = None  # Icon identifier/path
     background_color: Optional[str] = None  # Hex color code
-    text_color: Optional[str] = None     # Hex color for text
-    icon_data: Optional[bytes] = None    # Raw icon data if available
-    icon_file_path: Optional[str] = None # Path to actual icon file (e.g., profile picture)
-    
+    text_color: Optional[str] = None  # Hex color for text
+    icon_data: Optional[bytes] = None  # Raw icon data if available
+    icon_file_path: Optional[str] = (
+        None  # Path to actual icon file (e.g., profile picture)
+    )
+
     def __post_init__(self):
         # Set default colors if not provided
         if self.background_color is None:
@@ -31,125 +34,126 @@ class ProfileIcon:
 @dataclass
 class Profile:
     """Represents a browser profile."""
-    id: str                    # Browser-specific profile identifier
-    name: str                  # User-friendly display name  
-    browser: str               # Browser type (chrome, firefox, etc.)
-    is_private: bool = False   # Whether this is a private/incognito profile
+
+    id: str  # Browser-specific profile identifier
+    name: str  # User-friendly display name
+    browser: str  # Browser type (chrome, firefox, etc.)
+    is_private: bool = False  # Whether this is a private/incognito profile
     icon: Optional[ProfileIcon] = None  # Profile icon information
 
 
 class Browser(ABC):
     """Abstract base class for browser implementations."""
-    
+
     @property
     @abstractmethod
     def name(self) -> str:
         """Return the browser name (e.g., 'chrome', 'firefox')."""
         pass
-    
+
     @property
     @abstractmethod
     def display_name(self) -> str:
         """Return the user-friendly browser name (e.g., 'Google Chrome', 'Mozilla Firefox')."""
         pass
-    
+
     @property
     @abstractmethod
     def executable_path(self) -> str:
         """Return the path to the browser executable."""
         pass
-    
+
     @abstractmethod
     def discover_profiles(self) -> List[Profile]:
         """
         Discover all available profiles for this browser.
-        
+
         Returns:
             List of Profile objects representing available profiles.
             Should not include the private mode profile.
         """
         pass
-    
+
     @abstractmethod
     def get_private_mode_profile(self) -> Profile:
         """
         Get the private/incognito mode profile for this browser.
-        
+
         Returns:
             Profile object representing private browsing mode.
         """
         pass
-    
+
     @abstractmethod
     def launch(self, profile: Profile, url: Optional[str] = None) -> None:
         """
         Launch the browser with the specified profile and optional URL.
-        
+
         Args:
             profile: Profile object to launch with
             url: Optional URL to open
         """
         pass
-    
+
     @abstractmethod
     def is_available(self) -> bool:
         """
         Check if this browser is available on the system.
-        
+
         Returns:
             True if the browser executable exists and is accessible.
         """
         pass
-    
+
     @abstractmethod
     def get_browser_icon(self) -> Optional[str]:
         """
         Get the browser's main icon.
-        
+
         Returns:
             Path to browser icon file, or None if not available.
         """
         pass
-    
+
     @abstractmethod
     def get_private_mode_icon(self) -> Optional[str]:
         """
         Get the browser's private/incognito mode icon.
-        
+
         Returns:
             Path to private mode icon file, or None if not available.
         """
         pass
-    
+
     @abstractmethod
     def get_profile_icon(self, profile: Profile) -> ProfileIcon:
         """
         Get icon information for a specific profile.
-        
+
         Args:
             profile: The profile to get icon information for
-            
+
         Returns:
             ProfileIcon with color and avatar information.
         """
         pass
-    
+
     def get_all_profiles(self) -> List[Profile]:
         """
         Get all profiles including the private mode profile.
-        
+
         Returns:
             List of all profiles with private mode profile at the end.
         """
         return self.discover_profiles() + [self.get_private_mode_profile()]
-    
+
     def get_profile_by_id(self, profile_id: str) -> Optional[Profile]:
         """
         Find a profile by its ID.
-        
+
         Args:
             profile_id: The profile ID to search for
-            
+
         Returns:
             Profile object if found, None otherwise.
         """
@@ -157,14 +161,14 @@ class Browser(ABC):
             if profile.id == profile_id:
                 return profile
         return None
-    
+
     def get_profile_by_name(self, profile_name: str) -> Optional[Profile]:
         """
         Find a profile by its display name.
-        
+
         Args:
             profile_name: The profile name to search for
-            
+
         Returns:
             Profile object if found, None otherwise.
         """
@@ -176,33 +180,35 @@ class Browser(ABC):
 
 class BrowserRegistry:
     """Registry for managing multiple browser implementations."""
-    
+
     def __init__(self):
         self._browsers: Dict[str, Browser] = {}
-    
+
     def register(self, browser: Browser) -> None:
         """Register a browser implementation."""
         self._browsers[browser.name] = browser
-    
+
     def get_browser(self, name: str) -> Optional[Browser]:
         """Get a browser by name."""
         return self._browsers.get(name)
-    
+
     def get_available_browsers(self) -> List[Browser]:
         """Get all available browsers on the system."""
-        return [browser for browser in self._browsers.values() if browser.is_available()]
-    
+        return [
+            browser for browser in self._browsers.values() if browser.is_available()
+        ]
+
     def get_all_profiles(self) -> List[Profile]:
         """Get all profiles from all available browsers."""
         profiles = []
         for browser in self.get_available_browsers():
             profiles.extend(browser.get_all_profiles())
         return profiles
-    
+
     def discover_all_profiles(self) -> Dict[str, List[Profile]]:
         """
         Discover profiles from all available browsers.
-        
+
         Returns:
             Dictionary mapping browser names to their profile lists.
         """
