@@ -21,8 +21,7 @@ uv sync
 
 **Run during development:**
 ```bash
-uv run choosr init      # Initialize config file
-uv run choosr url <URL> # Launch URL with profile selector
+uv run choosr url <URL> # Launch URL with profile selector (creates config if needed)
 ```
 
 **Test the application:**
@@ -94,7 +93,7 @@ uv run ruff format .        # Format code
 
 **User config file location:** `~/.choosr.yaml`
 
-The application auto-discovers browser profiles and creates the config file with `choosr init`.
+The application auto-discovers browser profiles and automatically creates the config file when first run.
 
 **Setting as default browser:** After installation, use `xdg-settings set default-web-browser choosr.desktop`
 

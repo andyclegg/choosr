@@ -58,11 +58,12 @@ def launch_browser(profile_name, url=None):
 
 
 def load_config():
-    """Load choosr configuration from YAML file."""
+    """Load choosr configuration from YAML file, creating it if it doesn't exist."""
     config_path = os.path.expanduser("~/.choosr.yaml")
 
     if not os.path.exists(config_path):
-        return {"browser_profiles": {}, "urls": []}
+        # Auto-create config file if it doesn't exist
+        _create_initial_config(config_path)
 
     try:
         with open(config_path, "r", encoding="utf-8") as f:
@@ -72,7 +73,6 @@ def load_config():
         print(f"Error: Invalid YAML in config file {config_path}")
         print(f"YAML parsing error: {e}")
         print("Please check the file syntax and fix any formatting issues.")
-        print("You can regenerate the config file with: choosr init")
         sys.exit(1)
     except OSError as e:
         print(f"Error: Cannot read config file {config_path}")
@@ -128,25 +128,8 @@ def get_all_browser_profiles():
     return profiles
 
 
-def init_config():
-    """Initialize choosr config file if it doesn't exist."""
-    config_path = os.path.expanduser("~/.choosr.yaml")
-
-    if os.path.exists(config_path):
-        # Try to load existing config to check if it's valid
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                yaml.safe_load(f)
-            print(f"Config file already exists at {config_path}")
-            return
-        except yaml.YAMLError:
-            print(f"Existing config file at {config_path} contains invalid YAML.")
-            response = input("Do you want to overwrite it? (y/N): ").strip().lower()
-            if not response.startswith("y"):
-                print("Config file initialization cancelled.")
-                return
-            print("Overwriting corrupted config file...")
-
+def _create_initial_config(config_path):
+    """Create initial config file with discovered browser profiles."""
     # Get all profiles from all available browsers
     all_profiles = get_all_browser_profiles()
 
@@ -165,17 +148,6 @@ def init_config():
     def write_config():
         with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
-        print(f"Created config file at {config_path}")
-
-        # Count profiles by browser
-        browser_counts = {}
-        for profile in all_profiles:
-            browser_counts[profile.browser] = browser_counts.get(profile.browser, 0) + 1
-
-        for browser_name, count in browser_counts.items():
-            browser = browser_registry.get_browser(browser_name)
-            browser_display = browser.display_name if browser else browser_name
-            print(f"Found {count} {browser_display} profiles")
 
     write_config()
 
@@ -235,8 +207,7 @@ def main():
     parser = argparse.ArgumentParser(description="Browser profile chooser")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Init subcommand
-    subparsers.add_parser("init", help="Initialize choosr config file")
+    # URL subcommand
     url_parser = subparsers.add_parser("url", help="Launch a URL")
 
     # URL argument for url subcommand
@@ -244,9 +215,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "init":
-        init_config()
-    elif args.command == "url":
+    if args.command == "url":
         handle_url(args.url)
     else:
         # No command provided - show help
