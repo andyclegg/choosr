@@ -39,14 +39,6 @@ jobs:
       run: |
         uv run twine check dist/*
 
-    - name: Upload to PyPI (if this was a real package)
-      # Commented out since this is a local project
-      # Uncomment and add PyPI tokens if you want to publish
-      run: |
-        echo "Would upload to PyPI here with:"
-        echo "uv run twine upload dist/*"
-        echo "But skipping for local development"
-
     - name: Create GitHub Release Assets
       uses: actions/upload-artifact@v4
       with:
