@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: uv sync --all-extras --dev
+
+    - name: Run Ruff linter
+      run: uv run ruff check .
+
+    - name: Run Ruff formatter check
+      run: uv run ruff format --check .
+
+    - name: Run tests
+      run: uv run pytest --tb=short -v
+
+    - name: Test installation process
+      run: |
+        # Test that the package can be built
+        uv build
+        # Test that choosr can be invoked
+        uv run choosr --help
+
+  test-ubuntu-packages:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip python3-venv
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Test choosr functionality
+      run: |
+        # Test config initialization
+        timeout 10s uv run choosr init || true
+        # Test help command
+        uv run choosr --help
+        # Verify the application structure
+        uv run python -c "import choosr; import browser; import chrome; import firefox; print('All modules import successfully')"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run safety check
+      run: |
+        uv add --dev safety
+        uv run safety check || true  # Don't fail the build on security warnings for now
+
+    - name: Check for secrets
+      run: |
+        # Basic check for common secret patterns
+        if grep -r -i "password\s*=" . --exclude-dir=.git --exclude-dir=.github || \
+           grep -r -i "secret\s*=" . --exclude-dir=.git --exclude-dir=.github || \
+           grep -r -i "token\s*=" . --exclude-dir=.git --exclude-dir=.github; then
+          echo "⚠️  Potential secrets found in code"
+          exit 1
+        else
+          echo "✅ No obvious secrets found"
+        fi
+
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Build package
+      run: uv build
+
+    - name: Check build artifacts
+      run: |
+        ls -la dist/
+        # Verify wheel and sdist were created
+        test -f dist/*.whl
+        test -f dist/*.tar.gz
+        echo "✅ Build artifacts created successfully"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
+        retention-days: 7

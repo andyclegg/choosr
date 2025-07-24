@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run tests
+      run: uv run pytest
+
+    - name: Run linting
+      run: uv run ruff check .
+
+  build-and-publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Build package
+      run: uv build
+
+    - name: Verify package
+      run: |
+        uv run twine check dist/*
+
+    - name: Upload to PyPI (if this was a real package)
+      # Commented out since this is a local project
+      # Uncomment and add PyPI tokens if you want to publish
+      run: |
+        echo "Would upload to PyPI here with:"
+        echo "uv run twine upload dist/*"
+        echo "But skipping for local development"
+
+    - name: Create GitHub Release Assets
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-packages
+        path: dist/
+        retention-days: 30

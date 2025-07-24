@@ -1,7 +1,5 @@
 """Tests for browser abstraction layer."""
 
-import pytest
-
 from browser import Profile, ProfileIcon, BrowserRegistry, Browser
 
 
@@ -31,10 +29,7 @@ class MockBrowser(Browser):
 
     def get_private_mode_profile(self):
         return Profile(
-            id="private",
-            name="Private Mode",
-            browser=self.name,
-            is_private=True
+            id="private", name="Private Mode", browser=self.name, is_private=True
         )
 
     def launch(self, profile, url=None):
@@ -51,9 +46,7 @@ class MockBrowser(Browser):
 
     def get_profile_icon(self, profile):
         return ProfileIcon(
-            avatar_icon="mock-avatar",
-            background_color="#FF0000",
-            text_color="#FFFFFF"
+            avatar_icon="mock-avatar", background_color="#FF0000", text_color="#FFFFFF"
         )
 
     def add_profile(self, profile):
@@ -80,7 +73,7 @@ class TestProfileIcon:
             background_color="#FF0000",
             text_color="#000000",
             icon_data=b"icon_data",
-            icon_file_path="/path/to/icon.png"
+            icon_file_path="/path/to/icon.png",
         )
         assert icon.avatar_icon == "custom-avatar"
         assert icon.background_color == "#FF0000"
@@ -101,9 +94,7 @@ class TestProfile:
     def test_basic_profile(self):
         """Test basic profile creation."""
         profile = Profile(
-            id="test-profile",
-            name="Test Profile",
-            browser="test-browser"
+            id="test-profile", name="Test Profile", browser="test-browser"
         )
         assert profile.id == "test-profile"
         assert profile.name == "Test Profile"
@@ -119,7 +110,7 @@ class TestProfile:
             name="Private Mode",
             browser="test-browser",
             is_private=True,
-            icon=icon
+            icon=icon,
         )
         assert profile.is_private is True
         assert profile.icon == icon
@@ -139,7 +130,7 @@ class TestBrowserRegistry:
         """Test registering a browser."""
         registry = BrowserRegistry()
         browser = MockBrowser()
-        
+
         registry.register(browser)
         assert registry.get_browser("mock") == browser
 
@@ -148,10 +139,10 @@ class TestBrowserRegistry:
         registry = BrowserRegistry()
         available_browser = MockBrowser("available", "Available Browser", True)
         unavailable_browser = MockBrowser("unavailable", "Unavailable Browser", False)
-        
+
         registry.register(available_browser)
         registry.register(unavailable_browser)
-        
+
         available = registry.get_available_browsers()
         assert len(available) == 1
         assert available[0] == available_browser
@@ -161,22 +152,22 @@ class TestBrowserRegistry:
         registry = BrowserRegistry()
         browser1 = MockBrowser("browser1")
         browser2 = MockBrowser("browser2")
-        
+
         profile1 = Profile("prof1", "Profile 1", "browser1")
         profile2 = Profile("prof2", "Profile 2", "browser1")
         profile3 = Profile("prof3", "Profile 3", "browser2")
-        
+
         browser1.add_profile(profile1)
         browser1.add_profile(profile2)
         browser2.add_profile(profile3)
-        
+
         registry.register(browser1)
         registry.register(browser2)
-        
+
         all_profiles = registry.get_all_profiles()
         # Should include regular profiles + private profiles from each browser
         assert len(all_profiles) == 5  # 3 regular + 2 private
-        
+
         # Check that all regular profiles are included
         profile_names = [p.name for p in all_profiles]
         assert "Profile 1" in profile_names
@@ -189,17 +180,17 @@ class TestBrowserRegistry:
         registry = BrowserRegistry()
         browser1 = MockBrowser("browser1")
         browser2 = MockBrowser("browser2")
-        
+
         profile1 = Profile("prof1", "Profile 1", "browser1")
         browser1.add_profile(profile1)
-        
+
         registry.register(browser1)
         registry.register(browser2)
-        
+
         discovered = registry.discover_all_profiles()
         assert "browser1" in discovered
         assert "browser2" in discovered
-        
+
         # browser1 should have 2 profiles (1 regular + 1 private)
         assert len(discovered["browser1"]) == 2
         # browser2 should have 1 profile (just private)
@@ -214,10 +205,10 @@ class TestBrowserMethods:
         browser = MockBrowser()
         regular_profile = Profile("regular", "Regular Profile", "mock")
         browser.add_profile(regular_profile)
-        
+
         all_profiles = browser.get_all_profiles()
         assert len(all_profiles) == 2
-        
+
         # Regular profile should be first
         assert all_profiles[0] == regular_profile
         # Private profile should be last
@@ -230,11 +221,11 @@ class TestBrowserMethods:
         profile2 = Profile("id2", "Profile 2", "mock")
         browser.add_profile(profile1)
         browser.add_profile(profile2)
-        
+
         assert browser.get_profile_by_id("id1") == profile1
         assert browser.get_profile_by_id("id2") == profile2
         assert browser.get_profile_by_id("nonexistent") is None
-        
+
         # Should also find private profile
         private = browser.get_profile_by_id("private")
         assert private is not None
@@ -247,11 +238,11 @@ class TestBrowserMethods:
         profile2 = Profile("id2", "Profile 2", "mock")
         browser.add_profile(profile1)
         browser.add_profile(profile2)
-        
+
         assert browser.get_profile_by_name("Profile 1") == profile1
         assert browser.get_profile_by_name("Profile 2") == profile2
         assert browser.get_profile_by_name("Nonexistent") is None
-        
+
         # Should also find private profile
         private = browser.get_profile_by_name("Private Mode")
         assert private is not None

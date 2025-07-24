@@ -31,6 +31,19 @@ uv run choosr --help    # Show help
 ~/.local/share/choosr/choosr-launcher url <URL>  # Test installed version
 ```
 
+**Run tests:**
+```bash
+uv run pytest              # Run all tests
+uv run pytest -v           # Run with verbose output
+uv run pytest tests/test_browser.py  # Run specific test file
+```
+
+**Code quality:**
+```bash
+uv run ruff check .         # Check code style and errors
+uv run ruff format .        # Format code
+```
+
 ## Architecture
 
 ### Core Components
