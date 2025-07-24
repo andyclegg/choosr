@@ -271,22 +271,17 @@ def main():
         help="Rescan browsers and update profile configuration",
     )
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
-    # URL subcommand
-    url_parser = subparsers.add_parser("url", help="Launch a URL")
-
-    # URL argument for url subcommand
-    url_parser.add_argument("url", help="URL to open")
+    # URL as positional argument
+    parser.add_argument("url", nargs="?", help="URL to open")
 
     args = parser.parse_args()
 
     if args.rescan_browsers:
         rescan_browsers()
-    elif args.command == "url":
+    elif args.url:
         handle_url(args.url)
     else:
-        # No command provided - show help
+        # No URL provided - show help
         parser.print_help()
 
 

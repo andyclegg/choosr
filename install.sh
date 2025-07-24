@@ -134,7 +134,7 @@ create_desktop_file() {
 Name=Choosr
 GenericName=Browser Chooser
 Comment=Choose which browser profile to use for links
-Exec=$launcher_path url %u
+Exec=$launcher_path %u
 Icon=$icon_path
 Type=Application
 Categories=Network;WebBrowser;
@@ -181,11 +181,8 @@ install_desktop_file() {
 init_config() {
     local launcher_path="$1"
     
-    if "$launcher_path" init 2>/dev/null; then
-        print_success "Initialized choosr configuration"
-    else
-        print_warning "Failed to initialize config - you may need to run 'choosr init' manually"
-    fi
+    # Config will be created automatically on first run
+    print_info "Configuration will be created automatically on first use"
 }
 
 # Main installation function
@@ -248,7 +245,7 @@ main() {
     echo "   xdg-settings get default-web-browser"
     echo
     echo "You can test choosr by running:"
-    echo "   $launcher_path url https://example.com"
+    echo "   $launcher_path https://example.com"
     echo
     echo "Or simply click on any web link!"
 }
