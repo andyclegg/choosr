@@ -110,6 +110,11 @@ class ProfileSelectorController(QObject):
         self._view.setModality(Qt.ApplicationModal)
         self._view.setTitle("Choose Profile")
         
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(__file__), "choosr-icon.svg")
+        if os.path.exists(icon_path):
+            self._view.setIcon(QIcon(icon_path))
+        
         # Connect window close handling
         def handle_window_close():
             self._cancelled = True
@@ -221,8 +226,6 @@ class ProfileSelectorController(QObject):
         for browser_name, groups in browser_groups.items():
             # Sort regular profiles alphabetically
             groups['regular'].sort(key=lambda x: x['name'].lower())
-            # Sort private profiles alphabetically
-            groups['private'].sort(key=lambda x: x['name'].lower())
             # Combine with private profiles at the end
             browser_profiles = groups['regular'] + groups['private']
             
