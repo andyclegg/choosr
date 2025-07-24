@@ -186,7 +186,7 @@ def handle_url(url):
     config = load_config()
 
     parsed = tldextract.extract(url)
-    domain = parsed.registered_domain
+    domain = parsed.top_domain_under_public_suffix
 
     # Find matching profile from config
     selected_profile_name = None
