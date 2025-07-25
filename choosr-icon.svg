@@ -21,8 +21,8 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="0.94592352"
-     inkscape:cx="570.87068"
-     inkscape:cy="271.69216"
+     inkscape:cx="571.39926"
+     inkscape:cy="272.22074"
      inkscape:window-width="1920"
      inkscape:window-height="1052"
      inkscape:window-x="0"
@@ -34,31 +34,11 @@
      id="defs4">
     <marker
        style="overflow:visible"
-       id="Dot"
-       refX="0"
-       refY="0"
-       orient="auto"
-       inkscape:stockid="Dot"
-       markerWidth="0.5"
-       markerHeight="0.5"
-       viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
-       preserveAspectRatio="xMidYMid">
-      <path
-         transform="scale(0.5)"
-         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
-         d="M 5,0 C 5,2.76 2.76,5 0,5 -2.76,5 -5,2.76 -5,0 c 0,-2.76 2.3,-5 5,-5 2.76,0 5,2.24 5,5 z"
-         sodipodi:nodetypes="sssss"
-         id="path17" />
-    </marker>
-    <marker
-       style="overflow:visible"
-       id="marker9"
+       id="ArrowWideRounded"
        refX="0"
        refY="0"
        orient="auto-start-reverse"
-       inkscape:stockid="Wide, heavy arrow"
+       inkscape:stockid="Wide, rounded arrow"
        markerWidth="1"
        markerHeight="1"
        viewBox="0 0 1 1"
@@ -66,45 +46,11 @@
        inkscape:collect="always"
        preserveAspectRatio="xMidYMid">
       <path
-         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
-         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
-         id="path9" />
-    </marker>
-    <marker
-       style="overflow:visible"
-       id="marker7"
-       refX="0"
-       refY="0"
-       orient="auto-start-reverse"
-       inkscape:stockid="Wide, heavy arrow"
-       markerWidth="1"
-       markerHeight="1"
-       viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
-       preserveAspectRatio="xMidYMid">
-      <path
-         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
-         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
-         id="path7" />
-    </marker>
-    <marker
-       style="overflow:visible"
-       id="ArrowWideHeavy"
-       refX="0"
-       refY="0"
-       orient="auto-start-reverse"
-       inkscape:stockid="Wide, heavy arrow"
-       markerWidth="1"
-       markerHeight="1"
-       viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
-       preserveAspectRatio="xMidYMid">
-      <path
-         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
-         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
-         id="path3" />
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:round"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path2" />
     </marker>
     <linearGradient
        id="globeGradient"
@@ -139,6 +85,26 @@
          style="stop-color:#4682B4;stop-opacity:1"
          id="stop4" />
     </linearGradient>
+    <marker
+       style="overflow:visible"
+       id="ArrowWideRounded-3"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, rounded arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:round"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path2-6" />
+    </marker>
   </defs>
   <!-- Globe -->
   <circle
@@ -149,18 +115,29 @@
      style="fill:url(#globeGradient);stroke-width:1.25"
      r="50" />
   <path
-     style="fill:none;stroke:#7100ff;stroke-width:4.6875;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
-     d="M 50.195951,50.340948 C 87.621914,81.540315 47.862627,86.631823 47.862627,86.631823 27.861323,84.156102 57.599958,41.080753 4.4342412,51.148156"
-     id="path4"
-     sodipodi:nodetypes="ccc" />
+     sodipodi:type="spiral"
+     style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:2.05002;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideRounded)"
+     id="path1"
+     sodipodi:cx="50.711021"
+     sodipodi:cy="49.885109"
+     sodipodi:expansion="1.4"
+     sodipodi:revolution="1.42"
+     sodipodi:radius="20.984703"
+     sodipodi:argument="-19.834316"
+     sodipodi:t0="0"
+     d="m 50.711021,49.885109 c 0.537203,-0.809248 1.471422,0.564536 1.536502,1.019975 0.320902,2.245731 -2.425196,3.338478 -4.228232,3.034876 -3.982139,-0.670527 -5.526947,-5.325279 -4.461508,-8.803383 1.811703,-5.914268 8.861771,-8.024968 14.256759,-5.952285 8.045014,3.090788 10.784784,12.89312 7.521313,20.409216 -2.82472,6.505611 -9.383575,10.697474 -16.37253,11.2034"
+     transform="matrix(2.9219823,0,0,1.7899434,-98.829692,-38.874623)" />
   <path
-     style="fill:none;stroke:#08dd00;stroke-width:4.6875;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker7)"
-     d="M 51.240695,49.503722 C 24.813896,54.342432 34.615384,29.280396 34.615384,29.280396 c 0,0 8.064724,-22.096418 40.942928,-13.275434 l 15.260546,4.094294"
-     id="path5"
-     sodipodi:nodetypes="ccsc" />
-  <path
-     style="fill:none;stroke:#ff1c00;stroke-width:4.6875;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker9);marker-start:url(#Dot)"
-     d="M 50.711023,49.224381 C 51.867302,33.036497 47.737739,21.96927 66.403359,33.532045 85.068981,45.094819 45.425184,54.014674 62.108615,71.358835 69.31924,78.855029 94.3192,88.372631 94.3192,88.372631"
-     id="path8"
-     sodipodi:nodetypes="cssc" />
+     sodipodi:type="spiral"
+     style="fill:none;fill-rule:evenodd;stroke:#00ff00;stroke-width:2.05002;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideRounded-3)"
+     id="path1-5"
+     sodipodi:cx="50.711021"
+     sodipodi:cy="49.885109"
+     sodipodi:expansion="1.4"
+     sodipodi:revolution="1.4199417"
+     sodipodi:radius="20.984703"
+     sodipodi:argument="-19.834316"
+     sodipodi:t0="0"
+     d="m 50.711021,49.885109 c 0.537234,-0.809295 1.471507,0.564568 1.53659,1.020034 0.320921,2.245859 -2.425335,3.33867 -4.228475,3.03505 -3.982367,-0.670566 -5.527265,-5.325585 -4.461764,-8.803889 1.811807,-5.914607 8.86228,-8.025429 14.257578,-5.952627 8.045477,3.090966 10.785404,12.893861 7.521746,20.410389 -2.823774,6.503431 -9.379199,10.695115 -16.365712,11.20348"
+     transform="matrix(-2.9219823,0,0,-1.7899434,198.41553,139.19437)" />
 </svg>
