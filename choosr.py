@@ -204,6 +204,9 @@ def rescan_browsers():
     config_path = os.path.expanduser("~/.choosr.yaml")
     config = load_config()
 
+    # Clear profile caches to force fresh discovery
+    browser_registry.clear_all_caches()
+
     # Get fresh profile data from all browsers
     all_profiles = get_all_browser_profiles()
 

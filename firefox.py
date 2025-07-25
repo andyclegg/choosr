@@ -17,6 +17,9 @@ from browser import Browser, Profile, ProfileIcon
 class FirefoxBrowser(Browser):
     """Mozilla Firefox browser implementation."""
 
+    def __init__(self):
+        super().__init__()
+
     # Firefox profile colors based on Firefox branding
     PROFILE_COLORS = [
         "#FF6611",  # Firefox orange
@@ -129,6 +132,15 @@ class FirefoxBrowser(Browser):
         Returns the full path to the profiles.ini file.
         """
         return os.path.join(self.get_config_directory(), "profiles.ini")
+
+    def get_source_files(self) -> List[str]:
+        """
+        Return list of files that Firefox profile discovery depends on.
+
+        Returns:
+            List of file paths for cache invalidation.
+        """
+        return [self.get_profiles_ini_file()]
 
     def profile_exists(self, profile_id: str) -> bool:
         """

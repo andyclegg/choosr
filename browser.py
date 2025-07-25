@@ -6,8 +6,11 @@ multiple browsers in choosr. Each browser implementation should inherit from
 the Browser class and implement the required methods.
 """
 
+import json
+import os
+import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import List, Dict, Optional
 
 
@@ -30,6 +33,15 @@ class ProfileIcon:
         if self.text_color is None:
             self.text_color = "#FFFFFF"  # Default white
 
+    def to_dict(self) -> Dict:
+        """Convert ProfileIcon to dictionary for serialization."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "ProfileIcon":
+        """Create ProfileIcon from dictionary."""
+        return cls(**data)
+
 
 @dataclass
 class Profile:
@@ -41,9 +53,157 @@ class Profile:
     is_private: bool = False  # Whether this is a private/incognito profile
     icon: Optional[ProfileIcon] = None  # Profile icon information
 
+    def to_dict(self) -> Dict:
+        """Convert Profile to dictionary for serialization."""
+        data = asdict(self)
+        if self.icon:
+            data["icon"] = self.icon.to_dict()
+        return data
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Profile":
+        """Create Profile from dictionary."""
+        icon_data = data.pop("icon", None)
+        profile = cls(**data)
+        if icon_data:
+            profile.icon = ProfileIcon.from_dict(icon_data)
+        return profile
+
+
+class ProfileCache:
+    """Caches browser profile data to improve performance."""
+
+    def __init__(self, cache_file: str = None):
+        """Initialize profile cache.
+
+        Args:
+            cache_file: Path to cache file. Defaults to ~/.choosr-cache.json
+        """
+        if cache_file is None:
+            cache_file = os.path.expanduser("~/.choosr-cache.json")
+        self.cache_file = cache_file
+        self._cache_data = {}
+        self._load_cache()
+
+    def _load_cache(self) -> None:
+        """Load cache data from disk."""
+        if os.path.exists(self.cache_file):
+            try:
+                with open(self.cache_file, "r", encoding="utf-8") as f:
+                    self._cache_data = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                self._cache_data = {}
+
+    def _save_cache(self) -> None:
+        """Save cache data to disk."""
+        try:
+            cache_dir = os.path.dirname(self.cache_file)
+            if cache_dir:  # Only create directory if there is one
+                os.makedirs(cache_dir, exist_ok=True)
+            with open(self.cache_file, "w", encoding="utf-8") as f:
+                json.dump(self._cache_data, f, indent=2)
+        except OSError:
+            pass  # Silently fail if can't write cache
+
+    def get_cached_profiles(
+        self, browser_name: str, source_files: List[str]
+    ) -> Optional[List[Profile]]:
+        """Get cached profiles if cache is still valid.
+
+        Args:
+            browser_name: Name of the browser
+            source_files: List of files that profiles depend on
+
+        Returns:
+            List of cached profiles if valid, None if cache is invalid or missing
+        """
+        cache_key = f"{browser_name}_profiles"
+
+        if cache_key not in self._cache_data:
+            return None
+
+        cached_entry = self._cache_data[cache_key]
+        cached_time = cached_entry.get("timestamp", 0)
+
+        # Check if any source file is newer than cache
+        for source_file in source_files:
+            if os.path.exists(source_file):
+                file_mtime = os.path.getmtime(source_file)
+                if file_mtime > cached_time:
+                    return None  # Cache is stale
+
+        # Deserialize profiles
+        try:
+            profile_data = cached_entry.get("profiles", [])
+            return [Profile.from_dict(p) for p in profile_data]
+        except (KeyError, TypeError):
+            return None
+
+    def cache_profiles(
+        self, browser_name: str, profiles: List[Profile], source_files: List[str]
+    ) -> None:
+        """Cache profiles for a browser.
+
+        Args:
+            browser_name: Name of the browser
+            profiles: List of profiles to cache
+            source_files: List of files that profiles depend on (for invalidation)
+        """
+        cache_key = f"{browser_name}_profiles"
+
+        # Use the latest modification time from source files
+        latest_mtime = 0
+        for source_file in source_files:
+            if os.path.exists(source_file):
+                latest_mtime = max(latest_mtime, os.path.getmtime(source_file))
+
+        # If no source files exist, use current time
+        if latest_mtime == 0:
+            latest_mtime = time.time()
+
+        self._cache_data[cache_key] = {
+            "timestamp": latest_mtime,
+            "profiles": [p.to_dict() for p in profiles],
+            "source_files": source_files,
+        }
+
+        self._save_cache()
+
+    def invalidate_browser(self, browser_name: str) -> None:
+        """Invalidate cache for a specific browser.
+
+        Args:
+            browser_name: Name of the browser to invalidate
+        """
+        cache_key = f"{browser_name}_profiles"
+        if cache_key in self._cache_data:
+            del self._cache_data[cache_key]
+            self._save_cache()
+
+    def clear_all(self) -> None:
+        """Clear all cached data."""
+        self._cache_data = {}
+        self._save_cache()
+
+    def get_cache_stats(self) -> Dict:
+        """Get cache statistics for debugging."""
+        stats = {}
+        for key, value in self._cache_data.items():
+            if key.endswith("_profiles"):
+                browser_name = key[:-9]  # Remove '_profiles' suffix
+                stats[browser_name] = {
+                    "profile_count": len(value.get("profiles", [])),
+                    "timestamp": value.get("timestamp", 0),
+                    "source_files": value.get("source_files", []),
+                }
+        return stats
+
 
 class Browser(ABC):
     """Abstract base class for browser implementations."""
+
+    def __init__(self):
+        self._cache = ProfileCache()
 
     @property
     @abstractmethod
@@ -138,6 +298,44 @@ class Browser(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_source_files(self) -> List[str]:
+        """
+        Return list of files that profile discovery depends on.
+
+        Used for cache invalidation - when these files change,
+        cached profiles should be refreshed.
+
+        Returns:
+            List of file paths that profiles depend on.
+        """
+        pass
+
+    def cached_discover_profiles(self) -> List[Profile]:
+        """
+        Discover profiles using cache when possible.
+
+        This method tries to return cached profiles first. If cache is invalid
+        or missing, it calls discover_profiles() and caches the result.
+
+        Returns:
+            List of Profile objects representing available profiles.
+        """
+        source_files = self.get_source_files()
+
+        # Try to get cached profiles
+        cached_profiles = self._cache.get_cached_profiles(self.name, source_files)
+        if cached_profiles is not None:
+            return cached_profiles
+
+        # Cache miss or invalid - discover fresh profiles
+        fresh_profiles = self.discover_profiles()
+
+        # Cache the fresh profiles
+        self._cache.cache_profiles(self.name, fresh_profiles, source_files)
+
+        return fresh_profiles
+
     def get_all_profiles(self) -> List[Profile]:
         """
         Get all profiles including the private mode profile.
@@ -145,7 +343,11 @@ class Browser(ABC):
         Returns:
             List of all profiles with private mode profile at the end.
         """
-        return self.discover_profiles() + [self.get_private_mode_profile()]
+        return self.cached_discover_profiles() + [self.get_private_mode_profile()]
+
+    def invalidate_cache(self) -> None:
+        """Invalidate cached profile data for this browser."""
+        self._cache.invalidate_browser(self.name)
 
     def get_profile_by_id(self, profile_id: str) -> Optional[Profile]:
         """
@@ -216,6 +418,20 @@ class BrowserRegistry:
         for browser in self.get_available_browsers():
             result[browser.name] = browser.get_all_profiles()
         return result
+
+    def clear_all_caches(self) -> None:
+        """Clear profile caches for all browsers."""
+        for browser in self._browsers.values():
+            browser.invalidate_cache()
+
+    def get_cache_stats(self) -> Dict:
+        """Get cache statistics from all browsers."""
+        if not self._browsers:
+            return {}
+
+        # Get cache stats from the first browser (they share the same cache)
+        first_browser = next(iter(self._browsers.values()))
+        return first_browser._cache.get_cache_stats()
 
 
 # Global browser registry instance

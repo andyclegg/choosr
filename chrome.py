@@ -16,6 +16,9 @@ from browser import Browser, Profile, ProfileIcon
 class ChromeBrowser(Browser):
     """Google Chrome browser implementation."""
 
+    def __init__(self):
+        super().__init__()
+
     # Chrome avatar icon color mapping
     AVATAR_COLORS = {
         "chrome-avatar-generic": "#4285F4",
@@ -169,6 +172,15 @@ class ChromeBrowser(Browser):
         Returns the full path to the Local State file.
         """
         return os.path.join(self.get_config_directory(), "Local State")
+
+    def get_source_files(self) -> List[str]:
+        """
+        Return list of files that Chrome profile discovery depends on.
+
+        Returns:
+            List of file paths for cache invalidation.
+        """
+        return [self.get_local_state_file()]
 
     def profile_exists(self, profile_id: str) -> bool:
         """

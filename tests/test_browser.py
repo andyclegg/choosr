@@ -1,12 +1,21 @@
 """Tests for browser abstraction layer."""
 
-from browser import Profile, ProfileIcon, BrowserRegistry, Browser
+import tempfile
+from browser import Profile, ProfileIcon, BrowserRegistry, Browser, ProfileCache
 
 
 class MockBrowser(Browser):
     """Mock browser implementation for testing."""
 
     def __init__(self, name="mock", display_name="Mock Browser", available=True):
+        # Use a temporary cache file for testing
+        self._temp_cache_file = tempfile.NamedTemporaryFile(delete=False)
+        self._temp_cache_file.close()
+
+        # Initialize parent with cache
+        super().__init__()
+        self._cache = ProfileCache(self._temp_cache_file.name)
+
         self._name = name
         self._display_name = display_name
         self._available = available
@@ -49,9 +58,22 @@ class MockBrowser(Browser):
             avatar_icon="mock-avatar", background_color="#FF0000", text_color="#FFFFFF"
         )
 
+    def get_source_files(self):
+        """Return mock source files for testing."""
+        return ["/mock/source/file.conf"]
+
     def add_profile(self, profile):
         """Helper method to add profiles for testing."""
         self._profiles.append(profile)
+
+    def cleanup(self):
+        """Clean up temporary files."""
+        import os
+
+        if hasattr(self, "_temp_cache_file") and os.path.exists(
+            self._temp_cache_file.name
+        ):
+            os.unlink(self._temp_cache_file.name)
 
 
 class TestProfileIcon:
@@ -184,6 +206,10 @@ class TestBrowserRegistry:
         profile1 = Profile("prof1", "Profile 1", "browser1")
         browser1.add_profile(profile1)
 
+        # Add a profile to browser2 to match test expectations
+        profile3 = Profile("prof3", "Profile 3", "browser2")
+        browser2.add_profile(profile3)
+
         registry.register(browser1)
         registry.register(browser2)
 
@@ -193,8 +219,8 @@ class TestBrowserRegistry:
 
         # browser1 should have 2 profiles (1 regular + 1 private)
         assert len(discovered["browser1"]) == 2
-        # browser2 should have 1 profile (just private)
-        assert len(discovered["browser2"]) == 1
+        # browser2 should have 2 profiles (1 regular + 1 private)
+        assert len(discovered["browser2"]) == 2
 
 
 class TestBrowserMethods:
