@@ -196,37 +196,34 @@ class TestBrowserManagement:
 
 
 class TestConfigInitialization:
-    """Tests for config file initialization."""
+    """Tests for config file initialization (auto-initialization in load_config)."""
 
-    def test_init_config_file_exists(self):
-        """Test init when config file already exists and is valid."""
+    def test_auto_init_config_file_exists(self):
+        """Test auto-init when config file already exists and is valid."""
         with (
             patch("os.path.exists", return_value=True),
             patch("builtins.open", mock_open(read_data="browser_profiles: {}")),
             patch("yaml.safe_load", return_value={"browser_profiles": {}}),
         ):
-            with patch("builtins.print") as mock_print:
-                choosr.init_config()
-                # Check that the success message was printed
-                printed_messages = [call.args[0] for call in mock_print.call_args_list]
-                assert any(
-                    "Config file already exists" in msg for msg in printed_messages
-                )
+            result = choosr.load_config()
+            assert result == {"browser_profiles": {}}
 
-    def test_init_config_invalid_existing_file(self):
-        """Test init when existing config file is invalid."""
+    def test_auto_init_config_invalid_existing_file(self):
+        """Test auto-init when existing config file is invalid."""
         with (
             patch("os.path.exists", return_value=True),
             patch("builtins.open", mock_open()),
             patch("yaml.safe_load", side_effect=yaml.YAMLError),
-            patch("builtins.input", return_value="n"),
+            patch("builtins.print") as mock_print,
+            patch("sys.exit") as mock_exit,
         ):
-            with patch("builtins.print") as mock_print:
-                choosr.init_config()
-                mock_print.assert_called_with("Config file initialization cancelled.")
+            choosr.load_config()
+            mock_exit.assert_called_with(1)
+            # Check that error message was printed
+            assert mock_print.called
 
-    def test_init_config_create_new(self):
-        """Test creating new config file."""
+    def test_auto_init_config_create_new(self):
+        """Test creating new config file when it doesn't exist."""
         mock_profiles = [
             Profile("default", "Default", "chrome"),
             Profile("work", "Work Profile", "chrome"),
@@ -239,12 +236,13 @@ class TestConfigInitialization:
                 choosr, "get_all_browser_profiles", return_value=mock_profiles
             ),
             patch("builtins.open", mock_open()) as mock_file,
+            patch("yaml.safe_load", return_value={"browser_profiles": {}, "urls": []}),
         ):
-            with patch("builtins.print"):
-                choosr.init_config()
-
-            # Should have attempted to write file
+            result = choosr.load_config()
+            # Should have attempted to write file during _create_initial_config
             mock_file.assert_called()
+            assert "browser_profiles" in result
+            assert "urls" in result
 
 
 class TestUrlHandling:
@@ -350,20 +348,20 @@ class TestUrlHandling:
 class TestMainFunction:
     """Tests for main entry point."""
 
-    def test_main_init_command(self):
-        """Test main function with init command."""
+    def test_main_rescan_browsers_command(self):
+        """Test main function with --rescan-browsers flag."""
         with (
-            patch("sys.argv", ["choosr", "init"]),
+            patch("sys.argv", ["choosr", "--rescan-browsers"]),
             patch.object(choosr, "initialize_browsers"),
-            patch.object(choosr, "init_config") as mock_init,
+            patch.object(choosr, "rescan_browsers") as mock_rescan,
         ):
             choosr.main()
-            mock_init.assert_called_once()
+            mock_rescan.assert_called_once()
 
-    def test_main_url_command(self):
-        """Test main function with url command."""
+    def test_main_url_argument(self):
+        """Test main function with URL positional argument."""
         with (
-            patch("sys.argv", ["choosr", "url", "https://example.com"]),
+            patch("sys.argv", ["choosr", "https://example.com"]),
             patch.object(choosr, "initialize_browsers"),
             patch.object(choosr, "handle_url") as mock_handle,
         ):
@@ -380,22 +378,16 @@ class TestMainFunction:
             choosr.main()
             mock_help.assert_called_once()
 
-    def test_main_invalid_command(self):
-        """Test main function with invalid command."""
+    def test_main_invalid_url_argument(self):
+        """Test main function with invalid URL argument (treated as URL)."""
         with (
             patch("sys.argv", ["choosr", "invalid"]),
             patch.object(choosr, "initialize_browsers"),
-            patch("argparse.ArgumentParser.print_help"),
-            patch("sys.exit"),
+            patch.object(choosr, "handle_url") as mock_handle,
         ):
-            try:
-                choosr.main()
-            except SystemExit:
-                pass  # argparse calls sys.exit for invalid commands
-
-            # Either help is called or SystemExit is raised by argparse
-            # We just need to verify initialize_browsers was called
-            pass
+            choosr.main()
+            # Even invalid arguments are treated as URLs and passed to handle_url
+            mock_handle.assert_called_once_with("invalid")
 
 
 class TestErrorHandling:
