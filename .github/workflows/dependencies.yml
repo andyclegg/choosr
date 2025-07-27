@@ -32,11 +32,9 @@ jobs:
         fi
       id: update
 
-    - name: Run tests with updated dependencies
+    - name: Run CI tests with updated dependencies
       if: steps.update.outputs.has_updates == 'true'
-      run: |
-        uv run pytest
-        uv run ruff check .
+      uses: ./.github/workflows/ci.yml
 
     - name: Create Pull Request
       if: steps.update.outputs.has_updates == 'true'
