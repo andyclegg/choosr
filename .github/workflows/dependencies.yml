@@ -31,13 +31,25 @@ jobs:
           echo "has_updates=true" >> $GITHUB_OUTPUT
         fi
       id: update
+    
+    outputs:
+      has_updates: ${{ steps.update.outputs.has_updates }}
 
-    - name: Run CI tests with updated dependencies
-      if: steps.update.outputs.has_updates == 'true'
-      uses: ./.github/workflows/ci.yml
+  test:
+    if: needs.update-dependencies.outputs.has_updates == 'true'
+    needs: update-dependencies
+    uses: ./.github/workflows/ci.yml
 
+  create-pr:
+    if: needs.update-dependencies.outputs.has_updates == 'true'
+    needs: [update-dependencies, test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
     - name: Create Pull Request
-      if: steps.update.outputs.has_updates == 'true'
       uses: peter-evans/create-pull-request@v6
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
