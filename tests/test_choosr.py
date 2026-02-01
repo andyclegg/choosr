@@ -252,7 +252,11 @@ class TestUrlHandling:
         """Test handling URL that matches existing pattern."""
         config = {
             "browser_profiles": {
-                "work-profile": {"browser": "chrome", "profile_id": "work", "name": "Work Profile"}
+                "work-profile": {
+                    "browser": "chrome",
+                    "profile_id": "work",
+                    "name": "Work Profile",
+                }
             },
             "urls": [{"match": "work.com", "profile": "work-profile"}],
         }
@@ -271,7 +275,11 @@ class TestUrlHandling:
         """Test handling URL with no match, showing GUI selector."""
         config = {
             "browser_profiles": {
-                "chrome-default": {"browser": "chrome", "profile_id": "default", "name": "Default"}
+                "chrome-default": {
+                    "browser": "chrome",
+                    "profile_id": "default",
+                    "name": "Default",
+                }
             },
             "urls": [],
         }
@@ -288,7 +296,9 @@ class TestUrlHandling:
             choosr.handle_url("https://example.com")
 
             mock_save.assert_called_once_with("*.example.com", "chrome-default")
-            mock_launch.assert_called_once_with("chrome-default", url="https://example.com")
+            mock_launch.assert_called_once_with(
+                "chrome-default", url="https://example.com"
+            )
 
     def test_handle_url_gui_cancelled(self):
         """Test handling URL when GUI selector is cancelled."""
@@ -329,7 +339,13 @@ class TestUrlHandling:
     def test_handle_url_domain_extraction(self):
         """Test URL domain extraction."""
         config = {
-            "browser_profiles": {"chrome-work": {"browser": "chrome", "profile_id": "work", "name": "Work"}},
+            "browser_profiles": {
+                "chrome-work": {
+                    "browser": "chrome",
+                    "profile_id": "work",
+                    "name": "Work",
+                }
+            },
             "urls": [{"match": "github.com", "profile": "chrome-work"}],
         }
 
@@ -339,10 +355,14 @@ class TestUrlHandling:
         ):
             # Test various URL formats
             choosr.handle_url("https://github.com/user/repo")
-            mock_launch.assert_called_with("chrome-work", url="https://github.com/user/repo")
+            mock_launch.assert_called_with(
+                "chrome-work", url="https://github.com/user/repo"
+            )
 
             choosr.handle_url("http://api.github.com/v1/repos")
-            mock_launch.assert_called_with("chrome-work", url="http://api.github.com/v1/repos")
+            mock_launch.assert_called_with(
+                "chrome-work", url="http://api.github.com/v1/repos"
+            )
 
 
 class TestMainFunction:
