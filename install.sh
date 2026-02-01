@@ -14,19 +14,19 @@ NC='\033[0m' # No Color
 
 # Print colored output
 print_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
+    echo -e "${BLUE}ℹ${NC} $1" >&2
 }
 
 print_success() {
-    echo -e "${GREEN}✓${NC} $1"
+    echo -e "${GREEN}✓${NC} $1" >&2
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
+    echo -e "${YELLOW}⚠${NC} $1" >&2
 }
 
 print_error() {
-    echo -e "${RED}✗${NC} $1"
+    echo -e "${RED}✗${NC} $1" >&2
 }
 
 # Check if we're in the right directory
@@ -50,15 +50,18 @@ check_uv() {
     fi
 }
 
-# Get UV virtual environment path
+# Get UV virtual environment path, creating it if necessary
 get_venv_path() {
     # UV creates virtual environments in .venv by default
-    if [[ -d ".venv" ]]; then
-        echo "$(pwd)/.venv"
-    else
-        print_error "UV virtual environment not found. Run 'uv sync' first."
-        exit 1
+    if [[ ! -d ".venv" ]]; then
+        print_info "Virtual environment not found. Running 'uv sync'..."
+        if ! uv sync; then
+            print_error "Failed to create virtual environment with 'uv sync'"
+            exit 1
+        fi
+        print_success "Virtual environment created"
     fi
+    echo "$(pwd)/.venv"
 }
 
 # Create installation directory
@@ -180,9 +183,20 @@ install_desktop_file() {
 # Initialize choosr configuration
 init_config() {
     local launcher_path="$1"
-    
+
     # Config will be created automatically on first run
     print_info "Configuration will be created automatically on first use"
+}
+
+# Set choosr as the default browser
+set_default_browser() {
+    print_info "Setting choosr as default browser..."
+    if xdg-settings set default-web-browser choosr.desktop; then
+        print_success "Choosr is now the default browser"
+    else
+        print_warning "Could not set default browser automatically"
+        print_info "You can set it manually with: xdg-settings set default-web-browser choosr.desktop"
+    fi
 }
 
 # Main installation function
@@ -223,28 +237,20 @@ main() {
     
     # Initialize configuration
     init_config "$launcher_path"
-    
+
+    # Set as default browser
+    set_default_browser
+
     # Success message
     echo
     echo "=================================================="
     echo -e "${GREEN}Installation completed successfully!${NC}"
     echo "=================================================="
     echo
-    echo "To set Choosr as your default browser:"
-    echo
-    echo "1. Using command line:"
-    echo "   xdg-settings set default-web-browser choosr.desktop"
-    echo
-    echo "2. Using GNOME Settings:"
-    echo "   Settings → Default Applications → Web Browser → Choosr"
-    echo
-    echo "3. Using KDE Settings:"
-    echo "   System Settings → Applications → Default Applications → Web Browser → Choosr"
-    echo
-    echo "4. Verify the setting:"
+    echo "Verify the default browser setting:"
     echo "   xdg-settings get default-web-browser"
     echo
-    echo "You can test choosr by running:"
+    echo "Test choosr by running:"
     echo "   $launcher_path https://example.com"
     echo
     echo "Or simply click on any web link!"
