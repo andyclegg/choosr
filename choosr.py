@@ -23,6 +23,24 @@ def initialize_browsers():
     browser_registry.register(firefox)
 
 
+def _normalize_key(text):
+    """Normalize text for use as a config key."""
+    import re
+
+    # Lowercase and replace non-alphanumeric with hyphens
+    key = re.sub(r"[^a-z0-9]+", "-", text.lower())
+    # Remove leading/trailing hyphens
+    return key.strip("-")
+
+
+def _generate_profile_key(profile):
+    """Generate a unique config key for a profile based on browser/name/email."""
+    parts = [profile.browser, profile.name]
+    if profile.email:
+        parts.append(profile.email)
+    return _normalize_key("-".join(parts))
+
+
 def _find_profile_by_name(profile_name):
     """Find profile by name across all browsers."""
     # First try browser-specific lookup (more efficient)
@@ -55,6 +73,33 @@ def launch_browser(profile_name, url=None):
         default_profiles = chrome.discover_profiles()
         if default_profiles:
             chrome.launch(default_profiles[0], url)
+
+
+def launch_browser_by_config_key(config_key, url=None):
+    """Launch browser using a config key to look up profile settings."""
+    from browser import Profile
+
+    config = load_config()
+    profile_config = config.get("browser_profiles", {}).get(config_key)
+
+    if not profile_config:
+        return
+
+    browser_name = profile_config.get("browser")
+    browser = browser_registry.get_browser(browser_name)
+
+    if not browser:
+        return
+
+    profile = Profile(
+        id=profile_config.get("profile_id", config_key),
+        name=profile_config.get("name", config_key),
+        browser=browser_name,
+        is_private=profile_config.get("is_private", False),
+        email=profile_config.get("email"),
+    )
+
+    browser.launch(profile, url)
 
 
 def load_config():
@@ -133,16 +178,20 @@ def _create_initial_config(config_path):
     # Get all profiles from all available browsers
     all_profiles = get_all_browser_profiles()
 
-    # Create config structure with profile names as keys
+    # Create config structure with unique keys for each profile
     config = {"browser_profiles": {}, "urls": []}
 
-    # Add each profile with name as key
     for profile in all_profiles:
-        config["browser_profiles"][profile.name] = {
+        key = _generate_profile_key(profile)
+        entry = {
             "browser": profile.browser,
             "profile_id": profile.id,
+            "name": profile.name,
             "is_private": profile.is_private,
         }
+        if profile.email:
+            entry["email"] = profile.email
+        config["browser_profiles"][key] = entry
 
     @_handle_yaml_write_error(config_path, "configuration")
     def write_config():
@@ -160,18 +209,18 @@ def handle_url(url):
     domain = parsed.top_domain_under_public_suffix
 
     # Find matching profile from config
-    selected_profile_name = None
+    selected_profile_key = None
 
     for url_config in config.get("urls", []):
         match_pattern = url_config.get("match", "")
-        profile_name = url_config.get("profile", "")
+        profile_key = url_config.get("profile", "")
 
         if fnmatch.fnmatch(domain, match_pattern):
-            selected_profile_name = profile_name
+            selected_profile_key = profile_key
             break
 
     # If no match found, show GUI selector
-    if not selected_profile_name:
+    if not selected_profile_key:
         browser_profiles = config.get("browser_profiles", {})
         if browser_profiles:
             # Lazy import this, only when needed
@@ -180,17 +229,17 @@ def handle_url(url):
             selection_result = show_qt_profile_selector(url, domain, browser_profiles)
 
             if selection_result:
-                selected_profile_name, domain_pattern, save_choice = selection_result
+                selected_profile_key, domain_pattern, save_choice = selection_result
 
                 # Only save to config if user chose "Remember choice and launch"
                 if save_choice:
-                    save_url_match(domain_pattern, selected_profile_name)
+                    save_url_match(domain_pattern, selected_profile_key)
             else:
                 return
 
     # Launch browser with selected profile
-    if selected_profile_name:
-        launch_browser(selected_profile_name, url=url)
+    if selected_profile_key:
+        launch_browser_by_config_key(selected_profile_key, url=url)
     else:
         # Fallback to first available profile
         all_profiles = get_all_browser_profiles()
@@ -213,23 +262,28 @@ def rescan_browsers():
     # Create new browser_profiles section
     new_browser_profiles = {}
     for profile in all_profiles:
-        new_browser_profiles[profile.name] = {
+        key = _generate_profile_key(profile)
+        entry = {
             "browser": profile.browser,
             "profile_id": profile.id,
+            "name": profile.name,
             "is_private": profile.is_private,
         }
+        if profile.email:
+            entry["email"] = profile.email
+        new_browser_profiles[key] = entry
 
     # Replace the browser_profiles section
     config["browser_profiles"] = new_browser_profiles
 
     # Clean up invalid URL entries
-    valid_profile_names = set(new_browser_profiles.keys())
+    valid_profile_keys = set(new_browser_profiles.keys())
     original_url_count = len(config.get("urls", []))
 
     config["urls"] = [
         url_entry
         for url_entry in config.get("urls", [])
-        if url_entry.get("profile") in valid_profile_names
+        if url_entry.get("profile") in valid_profile_keys
     ]
 
     cleaned_url_count = len(config["urls"])

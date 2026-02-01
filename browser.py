@@ -51,6 +51,7 @@ class Profile:
     name: str  # User-friendly display name
     browser: str  # Browser type (chrome, firefox, etc.)
     is_private: bool = False  # Whether this is a private/incognito profile
+    email: Optional[str] = None  # Associated email address
     icon: Optional[ProfileIcon] = None  # Profile icon information
 
     def to_dict(self) -> Dict:

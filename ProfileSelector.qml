@@ -103,9 +103,10 @@ Rectangle {
         property string pendingProfileName: ""
         property string pendingDomainPattern: ""
         property bool pendingRememberPattern: false
-        
+
         onTriggered: {
-            window.profileSelected(pendingProfileName, pendingDomainPattern, pendingRememberPattern)
+            var configKey = findProfileConfigKey(pendingProfileName)
+            window.profileSelected(configKey, pendingDomainPattern, pendingRememberPattern)
         }
     }
     
@@ -752,6 +753,22 @@ Rectangle {
             }
         }
         return 0
+    }
+
+    // Find configKey for a profile by display name
+    function findProfileConfigKey(profileName) {
+        for (var b = 0; b < profileData.length; b++) {
+            var browserData = profileData[b]
+            if (browserData && browserData.profiles) {
+                for (var i = 0; i < browserData.profiles.length; i++) {
+                    var profile = browserData.profiles[i]
+                    if (profile.name === profileName) {
+                        return profile.configKey
+                    }
+                }
+            }
+        }
+        return profileName  // Fallback to name if not found
     }
     
     // Build profile shortcuts array

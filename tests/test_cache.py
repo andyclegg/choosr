@@ -55,8 +55,8 @@ class TestProfileCache:
             # Create test profiles
             icon = ProfileIcon(background_color="#FF0000", text_color="#FFFFFF")
             profiles = [
-                Profile("profile1", "Profile 1", "chrome", False, icon),
-                Profile("profile2", "Profile 2", "chrome", True),
+                Profile("profile1", "Profile 1", "chrome", is_private=False, icon=icon),
+                Profile("profile2", "Profile 2", "chrome", is_private=True),
             ]
 
             # Cache profiles

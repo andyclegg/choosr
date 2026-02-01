@@ -252,26 +252,26 @@ class TestUrlHandling:
         """Test handling URL that matches existing pattern."""
         config = {
             "browser_profiles": {
-                "Work Profile": {"browser": "chrome", "profile_id": "work"}
+                "work-profile": {"browser": "chrome", "profile_id": "work", "name": "Work Profile"}
             },
-            "urls": [{"match": "work.com", "profile": "Work Profile"}],
+            "urls": [{"match": "work.com", "profile": "work-profile"}],
         }
 
         with (
             patch.object(choosr, "load_config", return_value=config),
-            patch.object(choosr, "launch_browser") as mock_launch,
+            patch.object(choosr, "launch_browser_by_config_key") as mock_launch,
         ):
             choosr.handle_url("https://mail.work.com")
 
             mock_launch.assert_called_once_with(
-                "Work Profile", url="https://mail.work.com"
+                "work-profile", url="https://mail.work.com"
             )
 
     def test_handle_url_no_match_with_gui(self):
         """Test handling URL with no match, showing GUI selector."""
         config = {
             "browser_profiles": {
-                "Default": {"browser": "chrome", "profile_id": "default"}
+                "chrome-default": {"browser": "chrome", "profile_id": "default", "name": "Default"}
             },
             "urls": [],
         }
@@ -280,15 +280,15 @@ class TestUrlHandling:
             patch.object(choosr, "load_config", return_value=config),
             patch(
                 "qt_interface.show_qt_profile_selector",
-                return_value=("Default", "*.example.com", True),
+                return_value=("chrome-default", "*.example.com", True),
             ),
             patch.object(choosr, "save_url_match") as mock_save,
-            patch.object(choosr, "launch_browser") as mock_launch,
+            patch.object(choosr, "launch_browser_by_config_key") as mock_launch,
         ):
             choosr.handle_url("https://example.com")
 
-            mock_save.assert_called_once_with("*.example.com", "Default")
-            mock_launch.assert_called_once_with("Default", url="https://example.com")
+            mock_save.assert_called_once_with("*.example.com", "chrome-default")
+            mock_launch.assert_called_once_with("chrome-default", url="https://example.com")
 
     def test_handle_url_gui_cancelled(self):
         """Test handling URL when GUI selector is cancelled."""
@@ -329,20 +329,20 @@ class TestUrlHandling:
     def test_handle_url_domain_extraction(self):
         """Test URL domain extraction."""
         config = {
-            "browser_profiles": {"Work": {"browser": "chrome", "profile_id": "work"}},
-            "urls": [{"match": "github.com", "profile": "Work"}],
+            "browser_profiles": {"chrome-work": {"browser": "chrome", "profile_id": "work", "name": "Work"}},
+            "urls": [{"match": "github.com", "profile": "chrome-work"}],
         }
 
         with (
             patch.object(choosr, "load_config", return_value=config),
-            patch.object(choosr, "launch_browser") as mock_launch,
+            patch.object(choosr, "launch_browser_by_config_key") as mock_launch,
         ):
             # Test various URL formats
             choosr.handle_url("https://github.com/user/repo")
-            mock_launch.assert_called_with("Work", url="https://github.com/user/repo")
+            mock_launch.assert_called_with("chrome-work", url="https://github.com/user/repo")
 
             choosr.handle_url("http://api.github.com/v1/repos")
-            mock_launch.assert_called_with("Work", url="http://api.github.com/v1/repos")
+            mock_launch.assert_called_with("chrome-work", url="http://api.github.com/v1/repos")
 
 
 class TestMainFunction:

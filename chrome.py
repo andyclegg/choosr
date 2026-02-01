@@ -95,7 +95,8 @@ class ChromeBrowser(Browser):
                 # Verify the profile directory actually exists
                 profile_path = os.path.join(chrome_config_dir, profile_dir)
                 if os.path.isdir(profile_path):
-                    display_name = profile_info.get("name", profile_dir)
+                    name = profile_info.get("name", profile_dir)
+                    email = profile_info.get("user_name")
                     # Get profile icon information
                     profile_icon = self._get_profile_icon_from_info(
                         profile_info, profile_dir
@@ -104,9 +105,10 @@ class ChromeBrowser(Browser):
                     profiles.append(
                         Profile(
                             id=profile_dir,
-                            name=display_name,
+                            name=name,
                             browser=self.name,
                             is_private=False,
+                            email=email,
                             icon=profile_icon,
                         )
                     )

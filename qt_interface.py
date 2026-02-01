@@ -174,9 +174,14 @@ class ProfileSelectorController(QObject):
         # Group profiles by browser
         browser_groups = {}
 
-        for profile_name, profile_config in profiles.items():
+        for profile_key, profile_config in profiles.items():
             browser_type = profile_config.get("browser", "unknown")
             is_private = profile_config.get("is_private", False)
+
+            # Build display name from name and email fields
+            name = profile_config.get("name", profile_key)
+            email = profile_config.get("email")
+            display_name = f"{name} ({email})" if email else name
 
             # Get browser and profile icon information
             browser = browser_registry.get_browser(browser_type)
@@ -184,10 +189,11 @@ class ProfileSelectorController(QObject):
 
             # Create a Profile object to get icon information
             profile = Profile(
-                id=profile_config.get("profile_id", profile_name),
-                name=profile_name,
+                id=profile_config.get("profile_id", profile_key),
+                name=display_name,
                 browser=browser_type,
                 is_private=is_private,
+                email=email,
             )
 
             # Get icon information
@@ -207,7 +213,8 @@ class ProfileSelectorController(QObject):
                 icon_file_path = profile_icon.icon_file_path
 
             profile_data = {
-                "name": profile_name,
+                "name": display_name,
+                "configKey": profile_key,
                 "browser": browser_type,
                 "browserDisplayName": browser_display,
                 "isPrivate": is_private,
@@ -215,7 +222,7 @@ class ProfileSelectorController(QObject):
                 "backgroundColor": background_color,
                 "textColor": text_color,
                 "iconFilePath": icon_file_path or "",
-                "profileId": profile_config.get("profile_id", profile_name),
+                "profileId": profile_config.get("profile_id", profile_key),
             }
 
             # Group by browser display name
