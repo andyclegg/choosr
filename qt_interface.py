@@ -17,6 +17,40 @@ from PySide6.QtQuick import QQuickView
 from browser import browser_registry, Profile
 
 
+def show_error_dialog(title: str, message: str) -> None:
+    """
+    Show an error dialog to the user.
+
+    Works even if the main GUI failed to initialize. Useful for
+    reporting errors to users who launched from desktop (no terminal).
+
+    Args:
+        title: Dialog title
+        message: Error message to display
+    """
+    from logging_config import get_logger
+
+    logger = get_logger()
+
+    logger.error("%s: %s", title, message)
+
+    try:
+        from PySide6.QtWidgets import QMessageBox, QApplication
+
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication([])
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.exec()
+    except Exception as e:
+        # If Qt fails, at least we logged the error
+        logger.warning("Could not show error dialog: %s", e)
+
+
 class ProfileSelectorView(QQuickView):
     """Custom QQuickView that emits a signal when closed."""
 
