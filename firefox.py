@@ -86,14 +86,21 @@ class FirefoxBrowser(Browser):
             is_private=True,
         )
 
-    def launch(self, profile: Profile, url: Optional[str] = None) -> None:
+    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
         """
         Launch Firefox with the specified profile and optional URL.
 
-        Firefox uses different command-line arguments:
-        - Profile: firefox -P "profile_name"
-        - Private: firefox --private-window [url]
+        Args:
+            profile: Profile object to launch with
+            url: Optional URL to open
+
+        Returns:
+            True if launch succeeded, False otherwise.
         """
+        from logging_config import get_logger
+
+        logger = get_logger()
+
         command = [self.executable_path]
 
         # Handle private browsing mode
@@ -106,7 +113,20 @@ class FirefoxBrowser(Browser):
         if url is not None:
             command.append(url)
 
-        subprocess.run(command, check=False)
+        logger.debug("Launching Firefox: %s", " ".join(command))
+
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            logger.error(
+                "Firefox launch failed (exit code %d): %s",
+                result.returncode,
+                result.stderr,
+            )
+            return False
+
+        logger.info("Launched Firefox profile '%s'", profile.name)
+        return True
 
     def is_available(self) -> bool:
         """

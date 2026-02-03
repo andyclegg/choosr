@@ -406,3 +406,36 @@ StartWithLastProfile=1
             # Should return False on error (except for private which is always True)
             assert firefox.profile_exists("private") is True
             assert firefox.profile_exists("regular") is False
+
+
+class TestFirefoxLaunchErrorHandling:
+    """Tests for Firefox launch error handling."""
+
+    def test_launch_returns_true_on_success(self, mocker):
+        """launch() should return True when subprocess succeeds."""
+        mock_run = mocker.patch("firefox.subprocess.run")
+        mock_run.return_value.returncode = 0
+
+        from firefox import FirefoxBrowser
+        from browser import Profile
+
+        browser = FirefoxBrowser()
+        profile = Profile(id="default", name="default", browser="firefox")
+
+        result = browser.launch(profile, "https://example.com")
+        assert result is True
+
+    def test_launch_returns_false_on_failure(self, mocker):
+        """launch() should return False when subprocess fails."""
+        mock_run = mocker.patch("firefox.subprocess.run")
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stderr = "Error: browser crashed"
+
+        from firefox import FirefoxBrowser
+        from browser import Profile
+
+        browser = FirefoxBrowser()
+        profile = Profile(id="default", name="default", browser="firefox")
+
+        result = browser.launch(profile, "https://example.com")
+        assert result is False
