@@ -10,7 +10,7 @@ import os
 import sys
 from typing import List, Optional, Tuple, Dict, Any
 
-from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt
+from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt, QEventLoop
 from PySide6.QtGui import QGuiApplication, QIcon, QPalette
 from PySide6.QtQuick import QQuickView
 
@@ -80,6 +80,8 @@ class ProfileSelectorController(QObject):
         self._url = ""
         self._domain = ""
         self._view = None
+        self._event_loop = None
+        self._timed_out = False
 
     def _detect_system_theme(self) -> str:
         """Detect if the system is using light or dark theme."""
@@ -161,6 +163,8 @@ class ProfileSelectorController(QObject):
         # Connect window close handling
         def handle_window_close():
             self._cancelled = True
+            if self._event_loop:
+                self._event_loop.quit()
 
         self._view.windowClosed.connect(handle_window_close)
 
@@ -188,18 +192,37 @@ class ProfileSelectorController(QObject):
             root.profileSelected.connect(self._on_profile_selected)
             root.cancelled.connect(self._on_cancelled)
 
+        # Create event loop for blocking
+        self._event_loop = QEventLoop()
+        self._timed_out = False
+
+        # Set timeout (5 minutes default, configurable via env)
+        timeout_ms = int(os.environ.get("CHOOSR_TIMEOUT", "300000"))
+
+        def on_timeout():
+            from logging_config import get_logger
+
+            get_logger().warning(
+                "Profile selector timed out after %d seconds", timeout_ms // 1000
+            )
+            self._timed_out = True
+            self._event_loop.quit()
+
+        QTimer.singleShot(timeout_ms, on_timeout)
+
         # Show window
         self._view.show()
 
-        # Process events until result is available
-        while self._result is None and not self._cancelled:
-            app.processEvents()
-            QTimer.singleShot(10, lambda: None)  # Small delay to prevent busy waiting
+        # Block until selection, cancel, or timeout
+        self._event_loop.exec()
 
         # Clean up
         if self._view:
             self._view.close()
             self._view = None
+
+        if self._timed_out:
+            return None
 
         return self._result
 
@@ -286,11 +309,15 @@ class ProfileSelectorController(QObject):
     ):
         """Handle profile selection from QML."""
         self._result = (profile_name, domain_pattern, save_choice)
+        if self._event_loop:
+            self._event_loop.quit()
 
     @Slot()
     def _on_cancelled(self):
         """Handle cancellation from QML."""
         self._cancelled = True
+        if self._event_loop:
+            self._event_loop.quit()
 
 
 # Global instance for use by choosr.py
