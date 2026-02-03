@@ -11,6 +11,7 @@ import subprocess
 from typing import List, Optional
 
 from browser import Browser, Profile, ProfileIcon
+from platform_support import get_current_platform
 
 
 class ChromeBrowser(Browser):
@@ -64,7 +65,7 @@ class ChromeBrowser(Browser):
     @property
     def executable_path(self) -> str:
         """Return the path to the Chrome executable."""
-        return "/usr/bin/google-chrome"
+        return get_current_platform().get_chrome_executable()
 
     def discover_profiles(self) -> List[Profile]:
         """
@@ -73,7 +74,7 @@ class ChromeBrowser(Browser):
         Based on get_chrome_profiles() from choosr.py.
         Reads profile information from Chrome's Local State file.
         """
-        chrome_config_dir = os.path.expanduser("~/.config/google-chrome")
+        chrome_config_dir = self.get_config_directory()
         profiles = []
 
         if not os.path.exists(chrome_config_dir):
@@ -165,7 +166,7 @@ class ChromeBrowser(Browser):
 
         Returns the path to Chrome's configuration directory.
         """
-        return os.path.expanduser("~/.config/google-chrome")
+        return str(get_current_platform().get_chrome_config_dir())
 
     def get_local_state_file(self) -> str:
         """

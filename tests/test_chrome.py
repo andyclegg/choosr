@@ -319,3 +319,32 @@ class TestChromeBrowser:
             assert icon.avatar_icon == "chrome://theme/IDR_PROFILE_AVATAR_5"
             assert icon.background_color == "#FF0000"  # Red
             assert icon.text_color == "#000000"  # Black
+
+
+class TestChromePlatformAbstraction:
+    def test_uses_platform_for_executable(self, mocker):
+        """Chrome should use platform abstraction for executable path."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("chrome.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from chrome import ChromeBrowser
+
+        browser = ChromeBrowser()
+
+        assert browser.executable_path == "/usr/bin/google-chrome"
+        mock_platform.assert_called()
+
+    def test_uses_platform_for_config_dir(self, mocker):
+        """Chrome should use platform abstraction for config directory."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("chrome.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from chrome import ChromeBrowser
+
+        browser = ChromeBrowser()
+
+        assert "google-chrome" in browser.get_config_directory()
