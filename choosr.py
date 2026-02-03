@@ -398,9 +398,6 @@ def rescan_browsers():
 
 def main():
     """Main entry point for choosr application."""
-    # Initialize browser registry
-    initialize_browsers()
-
     parser = argparse.ArgumentParser(description="Browser profile chooser")
 
     # Add global options
@@ -409,11 +406,24 @@ def main():
         action="store_true",
         help="Rescan browsers and update profile configuration",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
 
     # URL as positional argument
     parser.add_argument("url", nargs="?", help="URL to open")
 
     args = parser.parse_args()
+
+    # Setup logging before anything else
+    from logging_config import setup_logging
+
+    setup_logging(debug=args.debug)
+
+    # Initialize browser registry
+    initialize_browsers()
 
     if args.rescan_browsers:
         rescan_browsers()
