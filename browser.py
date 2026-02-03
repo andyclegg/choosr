@@ -246,13 +246,16 @@ class Browser(ABC):
         pass
 
     @abstractmethod
-    def launch(self, profile: Profile, url: Optional[str] = None) -> None:
+    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
         """
         Launch the browser with the specified profile and optional URL.
 
         Args:
             profile: Profile object to launch with
             url: Optional URL to open
+
+        Returns:
+            True if launch succeeded, False otherwise.
         """
         pass
 
