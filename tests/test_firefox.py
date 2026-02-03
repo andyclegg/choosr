@@ -3,9 +3,39 @@
 import configparser
 from unittest.mock import patch
 
-
 from firefox import FirefoxBrowser
 from browser import Profile, ProfileIcon
+
+
+class TestFirefoxPlatformAbstraction:
+    """Tests for Firefox platform abstraction integration."""
+
+    def test_uses_platform_for_executable(self, mocker):
+        """Firefox should use platform abstraction for executable path."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("firefox.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from firefox import FirefoxBrowser
+
+        browser = FirefoxBrowser()
+
+        assert browser.executable_path == "/usr/bin/firefox"
+        mock_platform.assert_called()
+
+    def test_uses_platform_for_config_dir(self, mocker):
+        """Firefox should use platform abstraction for config directory."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("firefox.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from firefox import FirefoxBrowser
+
+        browser = FirefoxBrowser()
+
+        assert "firefox" in browser.get_config_directory()
 
 
 class TestFirefoxBrowser:

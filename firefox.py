@@ -12,6 +12,7 @@ import subprocess
 from typing import List, Optional
 
 from browser import Browser, Profile, ProfileIcon
+from platform_support import get_current_platform
 
 
 class FirefoxBrowser(Browser):
@@ -45,7 +46,7 @@ class FirefoxBrowser(Browser):
     @property
     def executable_path(self) -> str:
         """Return the path to the Firefox executable."""
-        return "/usr/bin/firefox"
+        return get_current_platform().get_firefox_executable()
 
     def discover_profiles(self) -> List[Profile]:
         """
@@ -123,7 +124,7 @@ class FirefoxBrowser(Browser):
 
         Returns the path to Firefox's configuration directory.
         """
-        return os.path.expanduser("~/.mozilla/firefox")
+        return str(get_current_platform().get_firefox_config_dir())
 
     def get_profiles_ini_file(self) -> str:
         """
