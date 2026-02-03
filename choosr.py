@@ -41,6 +41,73 @@ def _generate_profile_key(profile):
     return _normalize_key("-".join(parts))
 
 
+def validate_config(config: dict, available_profiles: set) -> list:
+    """
+    Validate configuration and return list of warnings.
+
+    Args:
+        config: The loaded configuration dictionary
+        available_profiles: Set of valid profile keys
+
+    Returns:
+        List of warning messages (empty if config is valid)
+    """
+    from logging_config import get_logger
+
+    logger = get_logger()
+    warnings = []
+
+    # Validate URL entries
+    for url_entry in config.get("urls", []):
+        profile_key = url_entry.get("profile", "")
+        match_pattern = url_entry.get("match", "")
+
+        # Check profile exists
+        if profile_key and profile_key not in available_profiles:
+            msg = f"URL pattern '{match_pattern}' references unknown profile '{profile_key}'"
+            warnings.append(msg)
+            logger.warning(msg)
+
+        # Check pattern is valid
+        if match_pattern and not _is_valid_glob_pattern(match_pattern):
+            msg = f"Invalid glob pattern: '{match_pattern}'"
+            warnings.append(msg)
+            logger.warning(msg)
+
+    return warnings
+
+
+def _is_valid_glob_pattern(pattern: str) -> bool:
+    """
+    Check if a pattern is a valid fnmatch glob.
+
+    Args:
+        pattern: The glob pattern to validate
+
+    Returns:
+        True if pattern is valid, False otherwise
+    """
+    try:
+        fnmatch.translate(pattern)
+        # Check for unclosed brackets - fnmatch treats them as literals
+        # but they likely indicate a user error
+        bracket_depth = 0
+        i = 0
+        while i < len(pattern):
+            char = pattern[i]
+            if char == "[":
+                # Check if it's an escaped bracket or start of character class
+                bracket_depth += 1
+            elif char == "]" and bracket_depth > 0:
+                bracket_depth -= 1
+            i += 1
+        if bracket_depth != 0:
+            return False
+        return True
+    except Exception:
+        return False
+
+
 def _find_profile_by_name(profile_name):
     """Find profile by name across all browsers."""
     # First try browser-specific lookup (more efficient)
