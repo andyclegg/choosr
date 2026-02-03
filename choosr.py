@@ -171,6 +171,10 @@ def launch_browser_by_config_key(config_key, url=None):
 
 def load_config():
     """Load choosr configuration from YAML file, creating it if it doesn't exist."""
+    from logging_config import get_logger
+
+    logger = get_logger()
+
     config_path = os.path.expanduser("~/.choosr.yaml")
 
     if not os.path.exists(config_path):
@@ -180,7 +184,18 @@ def load_config():
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
-            return config or {"browser_profiles": {}, "urls": []}
+            config = config or {"browser_profiles": {}, "urls": []}
+
+            # Validate config
+            available_profiles = set(config.get("browser_profiles", {}).keys())
+            warnings = validate_config(config, available_profiles)
+
+            if warnings:
+                logger.warning("Configuration has %d issue(s):", len(warnings))
+                for warning in warnings:
+                    print(f"  Warning: {warning}", file=sys.stderr)
+
+            return config
     except yaml.YAMLError as e:
         print(f"Error: Invalid YAML in config file {config_path}")
         print(f"YAML parsing error: {e}")
