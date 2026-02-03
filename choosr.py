@@ -145,18 +145,23 @@ def launch_browser(profile_name, url=None):
 def launch_browser_by_config_key(config_key, url=None):
     """Launch browser using a config key to look up profile settings."""
     from browser import Profile
+    from logging_config import get_logger
+
+    logger = get_logger()
 
     config = load_config()
     profile_config = config.get("browser_profiles", {}).get(config_key)
 
     if not profile_config:
-        return
+        logger.error("Profile config not found: %s", config_key)
+        return False
 
     browser_name = profile_config.get("browser")
     browser = browser_registry.get_browser(browser_name)
 
     if not browser:
-        return
+        logger.error("Browser not found: %s", browser_name)
+        return False
 
     profile = Profile(
         id=profile_config.get("profile_id", config_key),
@@ -166,7 +171,21 @@ def launch_browser_by_config_key(config_key, url=None):
         email=profile_config.get("email"),
     )
 
-    browser.launch(profile, url)
+    success = browser.launch(profile, url)
+
+    if not success:
+        try:
+            from qt_interface import show_error_dialog
+
+            show_error_dialog(
+                "Launch Failed",
+                f"Could not open URL in {profile.name}.\n\n"
+                f"Run with --debug for more information.",
+            )
+        except ImportError:
+            pass  # Qt not available, error was already logged
+
+    return success
 
 
 def load_config():
