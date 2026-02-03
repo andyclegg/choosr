@@ -12,6 +12,7 @@ import subprocess
 from typing import List, Optional
 
 from browser import Browser, Profile, ProfileIcon
+from platform_support import get_current_platform
 
 
 class FirefoxBrowser(Browser):
@@ -45,7 +46,7 @@ class FirefoxBrowser(Browser):
     @property
     def executable_path(self) -> str:
         """Return the path to the Firefox executable."""
-        return "/usr/bin/firefox"
+        return get_current_platform().get_firefox_executable()
 
     def discover_profiles(self) -> List[Profile]:
         """
@@ -85,14 +86,21 @@ class FirefoxBrowser(Browser):
             is_private=True,
         )
 
-    def launch(self, profile: Profile, url: Optional[str] = None) -> None:
+    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
         """
         Launch Firefox with the specified profile and optional URL.
 
-        Firefox uses different command-line arguments:
-        - Profile: firefox -P "profile_name"
-        - Private: firefox --private-window [url]
+        Args:
+            profile: Profile object to launch with
+            url: Optional URL to open
+
+        Returns:
+            True if launch succeeded, False otherwise.
         """
+        from logging_config import get_logger
+
+        logger = get_logger()
+
         command = [self.executable_path]
 
         # Handle private browsing mode
@@ -105,7 +113,20 @@ class FirefoxBrowser(Browser):
         if url is not None:
             command.append(url)
 
-        subprocess.run(command, check=False)
+        logger.debug("Launching Firefox: %s", " ".join(command))
+
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            logger.error(
+                "Firefox launch failed (exit code %d): %s",
+                result.returncode,
+                result.stderr,
+            )
+            return False
+
+        logger.info("Launched Firefox profile '%s'", profile.name)
+        return True
 
     def is_available(self) -> bool:
         """
@@ -123,7 +144,7 @@ class FirefoxBrowser(Browser):
 
         Returns the path to Firefox's configuration directory.
         """
-        return os.path.expanduser("~/.mozilla/firefox")
+        return str(get_current_platform().get_firefox_config_dir())
 
     def get_profiles_ini_file(self) -> str:
         """

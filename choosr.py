@@ -41,6 +41,73 @@ def _generate_profile_key(profile):
     return _normalize_key("-".join(parts))
 
 
+def validate_config(config: dict, available_profiles: set) -> list:
+    """
+    Validate configuration and return list of warnings.
+
+    Args:
+        config: The loaded configuration dictionary
+        available_profiles: Set of valid profile keys
+
+    Returns:
+        List of warning messages (empty if config is valid)
+    """
+    from logging_config import get_logger
+
+    logger = get_logger()
+    warnings = []
+
+    # Validate URL entries
+    for url_entry in config.get("urls", []):
+        profile_key = url_entry.get("profile", "")
+        match_pattern = url_entry.get("match", "")
+
+        # Check profile exists
+        if profile_key and profile_key not in available_profiles:
+            msg = f"URL pattern '{match_pattern}' references unknown profile '{profile_key}'"
+            warnings.append(msg)
+            logger.warning(msg)
+
+        # Check pattern is valid
+        if match_pattern and not _is_valid_glob_pattern(match_pattern):
+            msg = f"Invalid glob pattern: '{match_pattern}'"
+            warnings.append(msg)
+            logger.warning(msg)
+
+    return warnings
+
+
+def _is_valid_glob_pattern(pattern: str) -> bool:
+    """
+    Check if a pattern is a valid fnmatch glob.
+
+    Args:
+        pattern: The glob pattern to validate
+
+    Returns:
+        True if pattern is valid, False otherwise
+    """
+    try:
+        fnmatch.translate(pattern)
+        # Check for unclosed brackets - fnmatch treats them as literals
+        # but they likely indicate a user error
+        bracket_depth = 0
+        i = 0
+        while i < len(pattern):
+            char = pattern[i]
+            if char == "[":
+                # Check if it's an escaped bracket or start of character class
+                bracket_depth += 1
+            elif char == "]" and bracket_depth > 0:
+                bracket_depth -= 1
+            i += 1
+        if bracket_depth != 0:
+            return False
+        return True
+    except Exception:
+        return False
+
+
 def _find_profile_by_name(profile_name):
     """Find profile by name across all browsers."""
     # First try browser-specific lookup (more efficient)
@@ -78,18 +145,23 @@ def launch_browser(profile_name, url=None):
 def launch_browser_by_config_key(config_key, url=None):
     """Launch browser using a config key to look up profile settings."""
     from browser import Profile
+    from logging_config import get_logger
+
+    logger = get_logger()
 
     config = load_config()
     profile_config = config.get("browser_profiles", {}).get(config_key)
 
     if not profile_config:
-        return
+        logger.error("Profile config not found: %s", config_key)
+        return False
 
     browser_name = profile_config.get("browser")
     browser = browser_registry.get_browser(browser_name)
 
     if not browser:
-        return
+        logger.error("Browser not found: %s", browser_name)
+        return False
 
     profile = Profile(
         id=profile_config.get("profile_id", config_key),
@@ -99,11 +171,29 @@ def launch_browser_by_config_key(config_key, url=None):
         email=profile_config.get("email"),
     )
 
-    browser.launch(profile, url)
+    success = browser.launch(profile, url)
+
+    if not success:
+        try:
+            from qt_interface import show_error_dialog
+
+            show_error_dialog(
+                "Launch Failed",
+                f"Could not open URL in {profile.name}.\n\n"
+                f"Run with --debug for more information.",
+            )
+        except ImportError:
+            pass  # Qt not available, error was already logged
+
+    return success
 
 
 def load_config():
     """Load choosr configuration from YAML file, creating it if it doesn't exist."""
+    from logging_config import get_logger
+
+    logger = get_logger()
+
     config_path = os.path.expanduser("~/.choosr.yaml")
 
     if not os.path.exists(config_path):
@@ -113,7 +203,18 @@ def load_config():
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
-            return config or {"browser_profiles": {}, "urls": []}
+            config = config or {"browser_profiles": {}, "urls": []}
+
+            # Validate config
+            available_profiles = set(config.get("browser_profiles", {}).keys())
+            warnings = validate_config(config, available_profiles)
+
+            if warnings:
+                logger.warning("Configuration has %d issue(s):", len(warnings))
+                for warning in warnings:
+                    print(f"  Warning: {warning}", file=sys.stderr)
+
+            return config
     except yaml.YAMLError as e:
         print(f"Error: Invalid YAML in config file {config_path}")
         print(f"YAML parsing error: {e}")
@@ -316,9 +417,6 @@ def rescan_browsers():
 
 def main():
     """Main entry point for choosr application."""
-    # Initialize browser registry
-    initialize_browsers()
-
     parser = argparse.ArgumentParser(description="Browser profile chooser")
 
     # Add global options
@@ -327,11 +425,24 @@ def main():
         action="store_true",
         help="Rescan browsers and update profile configuration",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
 
     # URL as positional argument
     parser.add_argument("url", nargs="?", help="URL to open")
 
     args = parser.parse_args()
+
+    # Setup logging before anything else
+    from logging_config import setup_logging
+
+    setup_logging(debug=args.debug)
+
+    # Initialize browser registry
+    initialize_browsers()
 
     if args.rescan_browsers:
         rescan_browsers()

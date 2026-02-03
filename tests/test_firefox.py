@@ -3,9 +3,39 @@
 import configparser
 from unittest.mock import patch
 
-
 from firefox import FirefoxBrowser
 from browser import Profile, ProfileIcon
+
+
+class TestFirefoxPlatformAbstraction:
+    """Tests for Firefox platform abstraction integration."""
+
+    def test_uses_platform_for_executable(self, mocker):
+        """Firefox should use platform abstraction for executable path."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("firefox.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from firefox import FirefoxBrowser
+
+        browser = FirefoxBrowser()
+
+        assert browser.executable_path == "/usr/bin/firefox"
+        mock_platform.assert_called()
+
+    def test_uses_platform_for_config_dir(self, mocker):
+        """Firefox should use platform abstraction for config directory."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("firefox.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from firefox import FirefoxBrowser
+
+        browser = FirefoxBrowser()
+
+        assert "firefox" in browser.get_config_directory()
 
 
 class TestFirefoxBrowser:
@@ -376,3 +406,36 @@ StartWithLastProfile=1
             # Should return False on error (except for private which is always True)
             assert firefox.profile_exists("private") is True
             assert firefox.profile_exists("regular") is False
+
+
+class TestFirefoxLaunchErrorHandling:
+    """Tests for Firefox launch error handling."""
+
+    def test_launch_returns_true_on_success(self, mocker):
+        """launch() should return True when subprocess succeeds."""
+        mock_run = mocker.patch("firefox.subprocess.run")
+        mock_run.return_value.returncode = 0
+
+        from firefox import FirefoxBrowser
+        from browser import Profile
+
+        browser = FirefoxBrowser()
+        profile = Profile(id="default", name="default", browser="firefox")
+
+        result = browser.launch(profile, "https://example.com")
+        assert result is True
+
+    def test_launch_returns_false_on_failure(self, mocker):
+        """launch() should return False when subprocess fails."""
+        mock_run = mocker.patch("firefox.subprocess.run")
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stderr = "Error: browser crashed"
+
+        from firefox import FirefoxBrowser
+        from browser import Profile
+
+        browser = FirefoxBrowser()
+        profile = Profile(id="default", name="default", browser="firefox")
+
+        result = browser.launch(profile, "https://example.com")
+        assert result is False

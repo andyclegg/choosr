@@ -319,3 +319,85 @@ class TestChromeBrowser:
             assert icon.avatar_icon == "chrome://theme/IDR_PROFILE_AVATAR_5"
             assert icon.background_color == "#FF0000"  # Red
             assert icon.text_color == "#000000"  # Black
+
+
+class TestChromePlatformAbstraction:
+    def test_uses_platform_for_executable(self, mocker):
+        """Chrome should use platform abstraction for executable path."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("chrome.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from chrome import ChromeBrowser
+
+        browser = ChromeBrowser()
+
+        assert browser.executable_path == "/usr/bin/google-chrome"
+        mock_platform.assert_called()
+
+    def test_uses_platform_for_config_dir(self, mocker):
+        """Chrome should use platform abstraction for config directory."""
+        from platform_support import LinuxPlatform
+
+        mock_platform = mocker.patch("chrome.get_current_platform")
+        mock_platform.return_value = LinuxPlatform()
+
+        from chrome import ChromeBrowser
+
+        browser = ChromeBrowser()
+
+        assert "google-chrome" in browser.get_config_directory()
+
+
+class TestChromeLaunchErrorHandling:
+    def test_launch_returns_true_on_success(self, mocker):
+        """launch() should return True when subprocess succeeds."""
+        mock_run = mocker.patch("chrome.subprocess.run")
+        mock_run.return_value.returncode = 0
+
+        from chrome import ChromeBrowser
+        from browser import Profile
+
+        browser = ChromeBrowser()
+        profile = Profile(id="Default", name="Default", browser="chrome")
+
+        result = browser.launch(profile, "https://example.com")
+        assert result is True
+
+    def test_launch_returns_false_on_failure(self, mocker):
+        """launch() should return False when subprocess fails."""
+        mock_run = mocker.patch("chrome.subprocess.run")
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stderr = "Error: browser crashed"
+
+        from chrome import ChromeBrowser
+        from browser import Profile
+
+        browser = ChromeBrowser()
+        profile = Profile(id="Default", name="Default", browser="chrome")
+
+        result = browser.launch(profile, "https://example.com")
+        assert result is False
+
+    def test_launch_logs_error_on_failure(self, mocker, caplog):
+        """launch() should log error when subprocess fails."""
+        import logging
+
+        mock_run = mocker.patch("chrome.subprocess.run")
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stderr = "browser crashed"
+
+        from chrome import ChromeBrowser
+        from browser import Profile
+        from logging_config import setup_logging
+
+        setup_logging(debug=True)
+
+        browser = ChromeBrowser()
+        profile = Profile(id="Default", name="Default", browser="chrome")
+
+        with caplog.at_level(logging.ERROR, logger="choosr"):
+            browser.launch(profile, "https://example.com")
+
+        assert "browser crashed" in caplog.text or "failed" in caplog.text.lower()
