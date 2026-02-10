@@ -97,14 +97,19 @@ class ProfileCache:
 
     def _save_cache(self) -> None:
         """Save cache data to disk."""
+        from logging_config import get_logger
+
+        logger = get_logger()
+
         try:
             cache_dir = os.path.dirname(self.cache_file)
             if cache_dir:  # Only create directory if there is one
                 os.makedirs(cache_dir, exist_ok=True)
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(self._cache_data, f, indent=2)
-        except OSError:
-            pass  # Silently fail if can't write cache
+            logger.debug("Saved profile cache to %s", self.cache_file)
+        except OSError as e:
+            logger.warning("Failed to write profile cache: %s", e)
 
     def get_cached_profiles(
         self, browser_name: str, source_files: List[str]
@@ -118,9 +123,14 @@ class ProfileCache:
         Returns:
             List of cached profiles if valid, None if cache is invalid or missing
         """
+        from logging_config import get_logger
+
+        logger = get_logger()
+
         cache_key = f"{browser_name}_profiles"
 
         if cache_key not in self._cache_data:
+            logger.debug("Cache miss for %s (no cache entry)", browser_name)
             return None
 
         cached_entry = self._cache_data[cache_key]
@@ -131,13 +141,19 @@ class ProfileCache:
             if os.path.exists(source_file):
                 file_mtime = os.path.getmtime(source_file)
                 if file_mtime > cached_time:
-                    return None  # Cache is stale
+                    logger.debug(
+                        "Cache miss for %s (source file changed)", browser_name
+                    )
+                    return None
 
         # Deserialize profiles
         try:
             profile_data = cached_entry.get("profiles", [])
-            return [Profile.from_dict(p) for p in profile_data]
+            profiles = [Profile.from_dict(p) for p in profile_data]
+            logger.debug("Cache hit for %s (%d profiles)", browser_name, len(profiles))
+            return profiles
         except (KeyError, TypeError):
+            logger.debug("Cache miss for %s (invalid cache data)", browser_name)
             return None
 
     def cache_profiles(
@@ -246,13 +262,16 @@ class Browser(ABC):
         pass
 
     @abstractmethod
-    def launch(self, profile: Profile, url: Optional[str] = None) -> None:
+    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
         """
         Launch the browser with the specified profile and optional URL.
 
         Args:
             profile: Profile object to launch with
             url: Optional URL to open
+
+        Returns:
+            True if launch succeeded, False otherwise.
         """
         pass
 

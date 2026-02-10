@@ -11,6 +11,7 @@ import subprocess
 from typing import List, Optional
 
 from browser import Browser, Profile, ProfileIcon
+from platform_support import get_current_platform
 
 
 class ChromeBrowser(Browser):
@@ -64,7 +65,7 @@ class ChromeBrowser(Browser):
     @property
     def executable_path(self) -> str:
         """Return the path to the Chrome executable."""
-        return "/usr/bin/google-chrome"
+        return get_current_platform().get_chrome_executable()
 
     def discover_profiles(self) -> List[Profile]:
         """
@@ -73,7 +74,7 @@ class ChromeBrowser(Browser):
         Based on get_chrome_profiles() from choosr.py.
         Reads profile information from Chrome's Local State file.
         """
-        chrome_config_dir = os.path.expanduser("~/.config/google-chrome")
+        chrome_config_dir = self.get_config_directory()
         profiles = []
 
         if not os.path.exists(chrome_config_dir):
@@ -129,13 +130,21 @@ class ChromeBrowser(Browser):
             is_private=True,
         )
 
-    def launch(self, profile: Profile, url: Optional[str] = None) -> None:
+    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
         """
         Launch Chrome with the specified profile and optional URL.
 
-        Based on launch_chrome() from choosr.py.
-        Handles both regular profiles and incognito mode.
+        Args:
+            profile: Profile object to launch with
+            url: Optional URL to open
+
+        Returns:
+            True if launch succeeded, False otherwise.
         """
+        from logging_config import get_logger
+
+        logger = get_logger()
+
         command = [self.executable_path]
 
         # Handle incognito mode (when profile directory is None)
@@ -147,7 +156,20 @@ class ChromeBrowser(Browser):
         if url is not None:
             command.append(url)
 
-        subprocess.run(command, check=False)
+        logger.debug("Launching Chrome: %s", " ".join(command))
+
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            logger.error(
+                "Chrome launch failed (exit code %d): %s",
+                result.returncode,
+                result.stderr,
+            )
+            return False
+
+        logger.info("Launched Chrome profile '%s'", profile.name)
+        return True
 
     def is_available(self) -> bool:
         """
@@ -165,7 +187,7 @@ class ChromeBrowser(Browser):
 
         Returns the path to Chrome's configuration directory.
         """
-        return os.path.expanduser("~/.config/google-chrome")
+        return str(get_current_platform().get_chrome_config_dir())
 
     def get_local_state_file(self) -> str:
         """

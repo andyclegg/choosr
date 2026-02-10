@@ -446,3 +446,48 @@ class TestErrorHandling:
             assert any(
                 "File system error" in str(call) for call in mock_print.call_args_list
             )
+
+
+class TestConfigValidation:
+    def test_validate_config_valid(self):
+        """Valid config should return empty warnings list."""
+        from choosr import validate_config
+
+        config = {
+            "browser_profiles": {
+                "chrome-default": {"browser": "chrome", "name": "Default"}
+            },
+            "urls": [{"match": "*.example.com", "profile": "chrome-default"}],
+        }
+        available_profiles = {"chrome-default"}
+
+        warnings = validate_config(config, available_profiles)
+        assert warnings == []
+
+    def test_validate_config_missing_profile(self):
+        """Config referencing missing profile should warn."""
+        from choosr import validate_config
+
+        config = {
+            "browser_profiles": {},
+            "urls": [{"match": "*.example.com", "profile": "nonexistent"}],
+        }
+        available_profiles = set()
+
+        warnings = validate_config(config, available_profiles)
+        assert any("nonexistent" in w for w in warnings)
+
+    def test_validate_config_invalid_pattern(self):
+        """Config with invalid glob pattern should warn."""
+        from choosr import validate_config
+
+        config = {
+            "browser_profiles": {
+                "chrome-default": {"browser": "chrome", "name": "Default"}
+            },
+            "urls": [{"match": "[invalid", "profile": "chrome-default"}],
+        }
+        available_profiles = {"chrome-default"}
+
+        warnings = validate_config(config, available_profiles)
+        assert any("invalid" in w.lower() or "pattern" in w.lower() for w in warnings)
