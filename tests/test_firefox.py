@@ -204,8 +204,8 @@ StartWithLastProfile=1
                     section = {"Name": "default"}
                     # Mock getboolean method
                     section_mock = type("MockSection", (), section)()
-                    section_mock.getboolean = (
-                        lambda key, default=False: key == "Default"
+                    section_mock.getboolean = lambda key, default=False: (
+                        key == "Default"
                     )
                     section_mock.get = lambda key, default=None: section.get(
                         key, default
