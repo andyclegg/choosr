@@ -336,6 +336,60 @@ class TestUrlHandling:
 
             mock_launch.assert_called_once_with("Default", url="https://example.com")
 
+    def test_handle_url_localhost(self):
+        """Test that localhost URLs show the GUI selector with 'localhost' as domain."""
+        config = {
+            "browser_profiles": {
+                "chrome-default": {
+                    "browser": "chrome",
+                    "profile_id": "default",
+                    "name": "Default",
+                }
+            },
+            "urls": [],
+        }
+
+        with (
+            patch.object(choosr, "load_config", return_value=config),
+            patch(
+                "qt_interface.show_qt_profile_selector",
+                return_value=("chrome-default", "localhost", True),
+            ) as mock_gui,
+            patch.object(choosr, "save_url_match") as mock_save,
+            patch.object(choosr, "launch_browser_by_config_key"),
+        ):
+            choosr.handle_url("http://localhost:3000")
+
+            # GUI should be called with "localhost" as the domain, not ""
+            _url, domain, _profiles = mock_gui.call_args[0]
+            assert domain == "localhost"
+            mock_save.assert_called_once_with("localhost", "chrome-default")
+
+    def test_handle_url_localhost_saved_pattern(self):
+        """Test that a saved localhost pattern auto-launches without GUI."""
+        config = {
+            "browser_profiles": {
+                "chrome-default": {
+                    "browser": "chrome",
+                    "profile_id": "default",
+                    "name": "Default",
+                }
+            },
+            "urls": [{"match": "localhost", "profile": "chrome-default"}],
+        }
+
+        with (
+            patch.object(choosr, "load_config", return_value=config),
+            patch("qt_interface.show_qt_profile_selector") as mock_gui,
+            patch.object(choosr, "launch_browser_by_config_key") as mock_launch,
+        ):
+            choosr.handle_url("http://localhost:3000/app")
+
+            mock_gui.assert_not_called()
+            mock_launch.assert_called_once_with(
+                "chrome-default", url="http://localhost:3000/app"
+            )
+
     def test_handle_url_domain_extraction(self):
         """Test URL domain extraction."""
         config = {
