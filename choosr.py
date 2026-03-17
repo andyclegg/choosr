@@ -307,7 +307,7 @@ def handle_url(url):
     config = load_config()
 
     parsed = tldextract.extract(url)
-    domain = parsed.top_domain_under_public_suffix
+    domain = parsed.top_domain_under_public_suffix or parsed.domain
 
     # Find matching profile from config
     selected_profile_key = None

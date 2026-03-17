@@ -25,7 +25,7 @@ Rectangle {
         
         // Handle Enter
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (window.selectedProfile !== "" && window.domainPattern.trim() !== "") {
+            if (window.selectedProfile !== "" && (!window.rememberPattern || window.domainPattern.trim() !== "")) {
                 // Setup timer to delay window closing and trigger animation globally
                 selectionDelayTimer.pendingProfileName = window.selectedProfile
                 selectionDelayTimer.pendingDomainPattern = window.domainPattern.trim()
@@ -591,7 +591,7 @@ Rectangle {
                                                 onDoubleClicked: {
                                                     window.selectedProfile = modelData.name
                                                     window.selectedProfileIndex = findProfileIndex(modelData.name)
-                                                    if (window.domainPattern.trim() !== "") {
+                                                    if (!window.rememberPattern || window.domainPattern.trim() !== "") {
                                                         selectionAnimation.start()
                                                         // Setup timer to delay window closing
                                                         selectionDelayTimer.pendingProfileName = modelData.name
@@ -652,7 +652,7 @@ Rectangle {
     
     // Launch profile by shortcut index
     function launchProfileByIndex(index) {
-        if (index >= 0 && index < window.profileShortcuts.length && window.domainPattern.trim() !== "") {
+        if (index >= 0 && index < window.profileShortcuts.length && (!window.rememberPattern || window.domainPattern.trim() !== "")) {
             var profileName = window.profileShortcuts[index]
             window.selectedProfile = profileName
             window.selectedProfileIndex = index
