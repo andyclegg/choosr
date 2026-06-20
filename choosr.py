@@ -306,19 +306,25 @@ def handle_url(url):
     """Handle URL opening with profile selection."""
     config = load_config()
 
-    parsed = tldextract.extract(url)
-    domain = parsed.top_domain_under_public_suffix or parsed.domain
+    is_local_file = url.startswith("file://")
 
-    # Find matching profile from config
+    if is_local_file:
+        domain = ""
+    else:
+        parsed = tldextract.extract(url)
+        domain = parsed.top_domain_under_public_suffix or parsed.domain
+
+    # Find matching profile from config (skip for local files)
     selected_profile_key = None
 
-    for url_config in config.get("urls", []):
-        match_pattern = url_config.get("match", "")
-        profile_key = url_config.get("profile", "")
+    if not is_local_file:
+        for url_config in config.get("urls", []):
+            match_pattern = url_config.get("match", "")
+            profile_key = url_config.get("profile", "")
 
-        if fnmatch.fnmatch(domain, match_pattern):
-            selected_profile_key = profile_key
-            break
+            if fnmatch.fnmatch(domain, match_pattern):
+                selected_profile_key = profile_key
+                break
 
     # If no match found, show GUI selector
     if not selected_profile_key:
@@ -327,13 +333,15 @@ def handle_url(url):
             # Lazy import this, only when needed
             from qt_interface import show_qt_profile_selector
 
-            selection_result = show_qt_profile_selector(url, domain, browser_profiles)
+            selection_result = show_qt_profile_selector(
+                url, domain, browser_profiles, allow_remember=not is_local_file
+            )
 
             if selection_result:
                 selected_profile_key, domain_pattern, save_choice = selection_result
 
                 # Only save to config if user chose "Remember choice and launch"
-                if save_choice:
+                if save_choice and domain_pattern:
                     save_url_match(domain_pattern, selected_profile_key)
             else:
                 return

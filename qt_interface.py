@@ -111,7 +111,11 @@ class ProfileSelectorController(QObject):
         return "dark" if bg_brightness < text_brightness else "light"
 
     def show_profile_selector(
-        self, url: str, domain: str, profiles: Dict[str, Any]
+        self,
+        url: str,
+        domain: str,
+        profiles: Dict[str, Any],
+        allow_remember: bool = True,
     ) -> Optional[Tuple[str, str, bool]]:
         """
         Show the Qt/QML profile selector interface.
@@ -127,6 +131,7 @@ class ProfileSelectorController(QObject):
 
         self._url = url
         self._domain = domain
+        self._allow_remember = allow_remember
         self._result = None
         self._cancelled = False
 
@@ -187,6 +192,7 @@ class ProfileSelectorController(QObject):
             root.setProperty("profileData", profile_data)
             root.setProperty("systemTheme", system_theme)
             root.setProperty("screenHeight", screen_height)
+            root.setProperty("allowRemember", allow_remember)
 
             # Connect signals
             root.profileSelected.connect(self._on_profile_selected)

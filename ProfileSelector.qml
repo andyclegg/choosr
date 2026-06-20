@@ -87,7 +87,8 @@ Rectangle {
     property int selectedProfileIndex: 0  // Index for keyboard navigation
     property string domainPattern: ""
     property bool warningVisible: false
-    property bool rememberPattern: true
+    property bool allowRemember: true
+    property bool rememberPattern: allowRemember
     property bool ctrlKeyPressed: false
     property var profileShortcuts: []  // Array to store first 10 profiles for shortcuts
     property string systemTheme: "light"
@@ -207,7 +208,8 @@ Rectangle {
         anchors.top: headerSection.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 110
+        height: window.allowRemember ? 110 : 0
+        visible: window.allowRemember
         color: cardColor
         
         ColumnLayout {
