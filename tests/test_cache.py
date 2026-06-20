@@ -5,7 +5,7 @@ import tempfile
 import time
 
 
-from browser import ProfileCache, Profile, ProfileIcon
+from choosr.browser import ProfileCache, Profile, ProfileIcon
 
 
 class TestProfileCache:

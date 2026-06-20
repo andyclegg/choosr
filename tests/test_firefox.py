@@ -3,8 +3,8 @@
 import configparser
 from unittest.mock import patch
 
-from firefox import FirefoxBrowser
-from browser import Profile, ProfileIcon
+from choosr.firefox import FirefoxBrowser
+from choosr.browser import Profile, ProfileIcon
 
 
 class TestFirefoxPlatformAbstraction:
@@ -12,12 +12,12 @@ class TestFirefoxPlatformAbstraction:
 
     def test_uses_platform_for_executable(self, mocker):
         """Firefox should use platform abstraction for executable path."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
-        mock_platform = mocker.patch("firefox.get_current_platform")
+        mock_platform = mocker.patch("choosr.firefox.get_current_platform")
         mock_platform.return_value = LinuxPlatform()
 
-        from firefox import FirefoxBrowser
+        from choosr.firefox import FirefoxBrowser
 
         browser = FirefoxBrowser()
 
@@ -26,12 +26,12 @@ class TestFirefoxPlatformAbstraction:
 
     def test_uses_platform_for_config_dir(self, mocker):
         """Firefox should use platform abstraction for config directory."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
-        mock_platform = mocker.patch("firefox.get_current_platform")
+        mock_platform = mocker.patch("choosr.firefox.get_current_platform")
         mock_platform.return_value = LinuxPlatform()
 
-        from firefox import FirefoxBrowser
+        from choosr.firefox import FirefoxBrowser
 
         browser = FirefoxBrowser()
 
@@ -413,11 +413,11 @@ class TestFirefoxLaunchErrorHandling:
 
     def test_launch_returns_true_on_success(self, mocker):
         """launch() should return True when subprocess succeeds."""
-        mock_run = mocker.patch("firefox.subprocess.run")
+        mock_run = mocker.patch("choosr.firefox.subprocess.run")
         mock_run.return_value.returncode = 0
 
-        from firefox import FirefoxBrowser
-        from browser import Profile
+        from choosr.firefox import FirefoxBrowser
+        from choosr.browser import Profile
 
         browser = FirefoxBrowser()
         profile = Profile(id="default", name="default", browser="firefox")
@@ -427,12 +427,12 @@ class TestFirefoxLaunchErrorHandling:
 
     def test_launch_returns_false_on_failure(self, mocker):
         """launch() should return False when subprocess fails."""
-        mock_run = mocker.patch("firefox.subprocess.run")
+        mock_run = mocker.patch("choosr.firefox.subprocess.run")
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = "Error: browser crashed"
 
-        from firefox import FirefoxBrowser
-        from browser import Profile
+        from choosr.firefox import FirefoxBrowser
+        from choosr.browser import Profile
 
         browser = FirefoxBrowser()
         profile = Profile(id="default", name="default", browser="firefox")

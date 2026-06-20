@@ -10,8 +10,8 @@ import os
 import subprocess
 from typing import List, Optional
 
-from browser import Browser, Profile, ProfileIcon
-from platform_support import get_current_platform
+from .browser import Browser, Profile, ProfileIcon
+from .platform_support import get_current_platform
 
 
 class ChromeBrowser(Browser):
@@ -141,7 +141,7 @@ class ChromeBrowser(Browser):
         Returns:
             True if launch succeeded, False otherwise.
         """
-        from logging_config import get_logger
+        from .logging_config import get_logger
 
         logger = get_logger()
 

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="640"
+   height="640"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="choosr-icon.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.94592352"
+     inkscape:cx="571.39926"
+     inkscape:cy="272.22074"
+     inkscape:window-width="1920"
+     inkscape:window-height="1052"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <!-- Gradient for globe 3D effect -->
+  <defs
+     id="defs4">
+    <marker
+       style="overflow:visible"
+       id="ArrowWideRounded"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, rounded arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:round"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path2" />
+    </marker>
+    <linearGradient
+       id="globeGradient"
+       x1="10"
+       y1="10"
+       x2="90"
+       y2="90"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.25,0,0,1.25,-12.5,-12.5)">
+      <stop
+         offset="0.41764659"
+         style="stop-color:#87CEFA;stop-opacity:1"
+         id="stop1" />
+      <stop
+         offset="100%"
+         style="stop-color:#1E90FF;stop-opacity:1"
+         id="stop2" />
+    </linearGradient>
+    <!-- Gradient for arrows to enhance 3D effect -->
+    <linearGradient
+       id="arrowGradient"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="0%">
+      <stop
+         offset="0%"
+         style="stop-color:#00BFFF;stop-opacity:1"
+         id="stop3" />
+      <stop
+         offset="100%"
+         style="stop-color:#4682B4;stop-opacity:1"
+         id="stop4" />
+    </linearGradient>
+    <marker
+       style="overflow:visible"
+       id="ArrowWideRounded-3"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, rounded arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:round"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path2-6" />
+    </marker>
+  </defs>
+  <!-- Globe -->
+  <circle
+     cx="50"
+     cy="50"
+     fill="url(#globeGradient)"
+     id="circle4"
+     style="fill:url(#globeGradient);stroke-width:1.25"
+     r="50" />
+  <path
+     sodipodi:type="spiral"
+     style="fill:none;fill-rule:evenodd;stroke:#ff0000;stroke-width:2.05002;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideRounded)"
+     id="path1"
+     sodipodi:cx="50.711021"
+     sodipodi:cy="49.885109"
+     sodipodi:expansion="1.4"
+     sodipodi:revolution="1.42"
+     sodipodi:radius="20.984703"
+     sodipodi:argument="-19.834316"
+     sodipodi:t0="0"
+     d="m 50.711021,49.885109 c 0.537203,-0.809248 1.471422,0.564536 1.536502,1.019975 0.320902,2.245731 -2.425196,3.338478 -4.228232,3.034876 -3.982139,-0.670527 -5.526947,-5.325279 -4.461508,-8.803383 1.811703,-5.914268 8.861771,-8.024968 14.256759,-5.952285 8.045014,3.090788 10.784784,12.89312 7.521313,20.409216 -2.82472,6.505611 -9.383575,10.697474 -16.37253,11.2034"
+     transform="matrix(2.9219823,0,0,1.7899434,-98.829692,-38.874623)" />
+  <path
+     sodipodi:type="spiral"
+     style="fill:none;fill-rule:evenodd;stroke:#00ff00;stroke-width:2.05002;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideRounded-3)"
+     id="path1-5"
+     sodipodi:cx="50.711021"
+     sodipodi:cy="49.885109"
+     sodipodi:expansion="1.4"
+     sodipodi:revolution="1.4199417"
+     sodipodi:radius="20.984703"
+     sodipodi:argument="-19.834316"
+     sodipodi:t0="0"
+     d="m 50.711021,49.885109 c 0.537234,-0.809295 1.471507,0.564568 1.53659,1.020034 0.320921,2.245859 -2.425335,3.33867 -4.228475,3.03505 -3.982367,-0.670566 -5.527265,-5.325585 -4.461764,-8.803889 1.811807,-5.914607 8.86228,-8.025429 14.257578,-5.952627 8.045477,3.090966 10.785404,12.893861 7.521746,20.410389 -2.823774,6.503431 -9.379199,10.695115 -16.365712,11.20348"
+     transform="matrix(-2.9219823,0,0,-1.7899434,198.41553,139.19437)" />
+</svg>

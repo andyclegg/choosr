@@ -11,7 +11,7 @@ class TestGetPlatform:
     def test_linux_returns_linux_platform(self):
         """Linux platform should return LinuxPlatform."""
         with patch.object(sys, "platform", "linux"):
-            from platform_support import get_platform, LinuxPlatform
+            from choosr.platform_support import get_platform, LinuxPlatform
 
             platform = get_platform()
             assert isinstance(platform, LinuxPlatform)
@@ -20,7 +20,7 @@ class TestGetPlatform:
         """macOS platform should raise NotImplementedError."""
         with patch.object(sys, "platform", "darwin"):
             import importlib
-            import platform_support
+            import choosr.platform_support as platform_support
 
             importlib.reload(platform_support)
 
@@ -31,7 +31,7 @@ class TestGetPlatform:
         """Windows platform should raise NotImplementedError."""
         with patch.object(sys, "platform", "win32"):
             import importlib
-            import platform_support
+            import choosr.platform_support as platform_support
 
             importlib.reload(platform_support)
 
@@ -42,14 +42,14 @@ class TestGetPlatform:
 class TestLinuxPlatform:
     def test_chrome_executable(self):
         """Chrome executable should be /usr/bin/google-chrome."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
         platform = LinuxPlatform()
         assert platform.get_chrome_executable() == "/usr/bin/google-chrome"
 
     def test_chrome_config_dir(self):
         """Chrome config dir should be ~/.config/google-chrome."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
         platform = LinuxPlatform()
         expected = Path.home() / ".config" / "google-chrome"
@@ -57,14 +57,14 @@ class TestLinuxPlatform:
 
     def test_firefox_executable(self):
         """Firefox executable should be /usr/bin/firefox."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
         platform = LinuxPlatform()
         assert platform.get_firefox_executable() == "/usr/bin/firefox"
 
     def test_firefox_config_dir(self):
         """Firefox config dir should be ~/.mozilla/firefox."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
         platform = LinuxPlatform()
         expected = Path.home() / ".mozilla" / "firefox"
@@ -72,7 +72,7 @@ class TestLinuxPlatform:
 
     def test_cache_dir(self):
         """Cache dir should be ~/.cache/choosr."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
         platform = LinuxPlatform()
         expected = Path.home() / ".cache" / "choosr"

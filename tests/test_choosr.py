@@ -5,7 +5,7 @@ import yaml
 
 
 import choosr
-from browser import Profile, BrowserRegistry
+from choosr.browser import Profile, BrowserRegistry
 
 
 class TestConfigurationHandling:
@@ -287,7 +287,7 @@ class TestUrlHandling:
         with (
             patch.object(choosr, "load_config", return_value=config),
             patch(
-                "qt_interface.show_qt_profile_selector",
+                "choosr.qt_interface.show_qt_profile_selector",
                 return_value=("chrome-default", "*.example.com", True),
             ),
             patch.object(choosr, "save_url_match") as mock_save,
@@ -311,7 +311,7 @@ class TestUrlHandling:
 
         with (
             patch.object(choosr, "load_config", return_value=config),
-            patch("qt_interface.show_qt_profile_selector", return_value=None),
+            patch("choosr.qt_interface.show_qt_profile_selector", return_value=None),
             patch.object(choosr, "launch_browser") as mock_launch,
         ):
             choosr.handle_url("https://example.com")
@@ -352,7 +352,7 @@ class TestUrlHandling:
         with (
             patch.object(choosr, "load_config", return_value=config),
             patch(
-                "qt_interface.show_qt_profile_selector",
+                "choosr.qt_interface.show_qt_profile_selector",
                 return_value=("chrome-default", "localhost", True),
             ) as mock_gui,
             patch.object(choosr, "save_url_match") as mock_save,
@@ -380,7 +380,7 @@ class TestUrlHandling:
 
         with (
             patch.object(choosr, "load_config", return_value=config),
-            patch("qt_interface.show_qt_profile_selector") as mock_gui,
+            patch("choosr.qt_interface.show_qt_profile_selector") as mock_gui,
             patch.object(choosr, "launch_browser_by_config_key") as mock_launch,
         ):
             choosr.handle_url("http://localhost:3000/app")

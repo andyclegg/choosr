@@ -9,7 +9,7 @@ class TestShowErrorDialog:
         mock_instance = mocker.MagicMock()
         mock_msgbox_class.return_value = mock_instance
 
-        from qt_interface import show_error_dialog
+        from choosr.qt_interface import show_error_dialog
 
         show_error_dialog("Test Error", "This is a test error message")
 
@@ -26,7 +26,7 @@ class TestShowErrorDialog:
         mock_instance = mocker.MagicMock()
         mock_msgbox_class.return_value = mock_instance
 
-        from qt_interface import show_error_dialog
+        from choosr.qt_interface import show_error_dialog
 
         show_error_dialog("Error", "")
 
@@ -38,7 +38,7 @@ class TestShowErrorDialog:
 class TestThemeDetection:
     def test_detect_system_theme_returns_string(self, qtbot):
         """Theme detection should return 'light' or 'dark'."""
-        from qt_interface import ProfileSelectorController
+        from choosr.qt_interface import ProfileSelectorController
 
         controller = ProfileSelectorController()
         theme = controller._detect_system_theme()

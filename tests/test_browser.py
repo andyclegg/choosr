@@ -1,7 +1,7 @@
 """Tests for browser abstraction layer."""
 
 import tempfile
-from browser import Profile, ProfileIcon, BrowserRegistry, Browser, ProfileCache
+from choosr.browser import Profile, ProfileIcon, BrowserRegistry, Browser, ProfileCache
 
 
 class MockBrowser(Browser):

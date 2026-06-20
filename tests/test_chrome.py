@@ -4,8 +4,8 @@ import json
 from unittest.mock import patch, mock_open
 
 
-from chrome import ChromeBrowser
-from browser import Profile, ProfileIcon
+from choosr.chrome import ChromeBrowser
+from choosr.browser import Profile, ProfileIcon
 
 
 class TestChromeBrowser:
@@ -324,12 +324,12 @@ class TestChromeBrowser:
 class TestChromePlatformAbstraction:
     def test_uses_platform_for_executable(self, mocker):
         """Chrome should use platform abstraction for executable path."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
-        mock_platform = mocker.patch("chrome.get_current_platform")
+        mock_platform = mocker.patch("choosr.chrome.get_current_platform")
         mock_platform.return_value = LinuxPlatform()
 
-        from chrome import ChromeBrowser
+        from choosr.chrome import ChromeBrowser
 
         browser = ChromeBrowser()
 
@@ -338,12 +338,12 @@ class TestChromePlatformAbstraction:
 
     def test_uses_platform_for_config_dir(self, mocker):
         """Chrome should use platform abstraction for config directory."""
-        from platform_support import LinuxPlatform
+        from choosr.platform_support import LinuxPlatform
 
-        mock_platform = mocker.patch("chrome.get_current_platform")
+        mock_platform = mocker.patch("choosr.chrome.get_current_platform")
         mock_platform.return_value = LinuxPlatform()
 
-        from chrome import ChromeBrowser
+        from choosr.chrome import ChromeBrowser
 
         browser = ChromeBrowser()
 
@@ -353,11 +353,11 @@ class TestChromePlatformAbstraction:
 class TestChromeLaunchErrorHandling:
     def test_launch_returns_true_on_success(self, mocker):
         """launch() should return True when subprocess succeeds."""
-        mock_run = mocker.patch("chrome.subprocess.run")
+        mock_run = mocker.patch("choosr.chrome.subprocess.run")
         mock_run.return_value.returncode = 0
 
-        from chrome import ChromeBrowser
-        from browser import Profile
+        from choosr.chrome import ChromeBrowser
+        from choosr.browser import Profile
 
         browser = ChromeBrowser()
         profile = Profile(id="Default", name="Default", browser="chrome")
@@ -367,12 +367,12 @@ class TestChromeLaunchErrorHandling:
 
     def test_launch_returns_false_on_failure(self, mocker):
         """launch() should return False when subprocess fails."""
-        mock_run = mocker.patch("chrome.subprocess.run")
+        mock_run = mocker.patch("choosr.chrome.subprocess.run")
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = "Error: browser crashed"
 
-        from chrome import ChromeBrowser
-        from browser import Profile
+        from choosr.chrome import ChromeBrowser
+        from choosr.browser import Profile
 
         browser = ChromeBrowser()
         profile = Profile(id="Default", name="Default", browser="chrome")
@@ -384,13 +384,13 @@ class TestChromeLaunchErrorHandling:
         """launch() should log error when subprocess fails."""
         import logging
 
-        mock_run = mocker.patch("chrome.subprocess.run")
+        mock_run = mocker.patch("choosr.chrome.subprocess.run")
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = "browser crashed"
 
-        from chrome import ChromeBrowser
-        from browser import Profile
-        from logging_config import setup_logging
+        from choosr.chrome import ChromeBrowser
+        from choosr.browser import Profile
+        from choosr.logging_config import setup_logging
 
         setup_logging(debug=True)
 

@@ -97,7 +97,7 @@ class ProfileCache:
 
     def _save_cache(self) -> None:
         """Save cache data to disk."""
-        from logging_config import get_logger
+        from .logging_config import get_logger
 
         logger = get_logger()
 
@@ -123,7 +123,7 @@ class ProfileCache:
         Returns:
             List of cached profiles if valid, None if cache is invalid or missing
         """
-        from logging_config import get_logger
+        from .logging_config import get_logger
 
         logger = get_logger()
 

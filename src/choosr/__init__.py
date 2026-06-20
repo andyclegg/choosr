@@ -7,9 +7,9 @@ import sys
 import tldextract
 import yaml
 
-from browser import browser_registry
-from chrome import ChromeBrowser
-from firefox import FirefoxBrowser
+from .browser import browser_registry
+from .chrome import ChromeBrowser
+from .firefox import FirefoxBrowser
 
 
 def initialize_browsers():
@@ -52,7 +52,7 @@ def validate_config(config: dict, available_profiles: set) -> list:
     Returns:
         List of warning messages (empty if config is valid)
     """
-    from logging_config import get_logger
+    from .logging_config import get_logger
 
     logger = get_logger()
     warnings = []
@@ -144,8 +144,8 @@ def launch_browser(profile_name, url=None):
 
 def launch_browser_by_config_key(config_key, url=None):
     """Launch browser using a config key to look up profile settings."""
-    from browser import Profile
-    from logging_config import get_logger
+    from .browser import Profile
+    from .logging_config import get_logger
 
     logger = get_logger()
 
@@ -175,7 +175,7 @@ def launch_browser_by_config_key(config_key, url=None):
 
     if not success:
         try:
-            from qt_interface import show_error_dialog
+            from .qt_interface import show_error_dialog
 
             show_error_dialog(
                 "Launch Failed",
@@ -190,7 +190,7 @@ def launch_browser_by_config_key(config_key, url=None):
 
 def load_config():
     """Load choosr configuration from YAML file, creating it if it doesn't exist."""
-    from logging_config import get_logger
+    from .logging_config import get_logger
 
     logger = get_logger()
 
@@ -331,7 +331,7 @@ def handle_url(url):
         browser_profiles = config.get("browser_profiles", {})
         if browser_profiles:
             # Lazy import this, only when needed
-            from qt_interface import show_qt_profile_selector
+            from .qt_interface import show_qt_profile_selector
 
             selection_result = show_qt_profile_selector(
                 url, domain, browser_profiles, allow_remember=not is_local_file
@@ -445,7 +445,7 @@ def main():
     args = parser.parse_args()
 
     # Setup logging before anything else
-    from logging_config import setup_logging
+    from .logging_config import setup_logging
 
     setup_logging(debug=args.debug)
 
@@ -459,7 +459,3 @@ def main():
     else:
         # No URL provided - show help
         parser.print_help()
-
-
-if __name__ == "__main__":
-    main()

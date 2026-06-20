@@ -14,7 +14,7 @@ from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt, QEventLoop
 from PySide6.QtGui import QGuiApplication, QIcon, QPalette
 from PySide6.QtQuick import QQuickView
 
-from browser import browser_registry, Profile
+from .browser import browser_registry, Profile
 
 
 def show_error_dialog(title: str, message: str) -> None:
@@ -28,7 +28,7 @@ def show_error_dialog(title: str, message: str) -> None:
         title: Dialog title
         message: Error message to display
     """
-    from logging_config import get_logger
+    from .logging_config import get_logger
 
     logger = get_logger()
 
@@ -206,7 +206,7 @@ class ProfileSelectorController(QObject):
         timeout_ms = int(os.environ.get("CHOOSR_TIMEOUT", "300000"))
 
         def on_timeout():
-            from logging_config import get_logger
+            from .logging_config import get_logger
 
             get_logger().warning(
                 "Profile selector timed out after %d seconds", timeout_ms // 1000
