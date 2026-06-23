@@ -75,7 +75,7 @@ jobs:
         # Test help command
         uv run choosr --help
         # Verify the application structure
-        uv run python -c "import choosr; import browser; import chrome; import firefox; print('All modules import successfully')"
+        uv run python -c "import choosr; from choosr import browser, chrome, firefox; print('All modules import successfully')"
 
 
   build-check:
