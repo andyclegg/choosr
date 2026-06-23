@@ -29,7 +29,7 @@ packages = ["src/choosr"]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.17",
+    "ruff>=0.15.18",
     "pytest>=9.1.1",
     "pytest-mock>=3.10.0",
     "pytest-qt>=4.2.0",
