@@ -306,25 +306,22 @@ def handle_url(url):
     """Handle URL opening with profile selection."""
     config = load_config()
 
-    is_local_file = url.startswith("file://")
-
-    if is_local_file:
-        domain = ""
+    if url.startswith("file://") or url.startswith("/"):
+        domain = "file://*"
     else:
         parsed = tldextract.extract(url)
         domain = parsed.top_domain_under_public_suffix or parsed.domain
 
-    # Find matching profile from config (skip for local files)
+    # Find matching profile from config
     selected_profile_key = None
 
-    if not is_local_file:
-        for url_config in config.get("urls", []):
-            match_pattern = url_config.get("match", "")
-            profile_key = url_config.get("profile", "")
+    for url_config in config.get("urls", []):
+        match_pattern = url_config.get("match", "")
+        profile_key = url_config.get("profile", "")
 
-            if fnmatch.fnmatch(domain, match_pattern):
-                selected_profile_key = profile_key
-                break
+        if fnmatch.fnmatch(domain, match_pattern):
+            selected_profile_key = profile_key
+            break
 
     # If no match found, show GUI selector
     if not selected_profile_key:
@@ -333,9 +330,7 @@ def handle_url(url):
             # Lazy import this, only when needed
             from .qt_interface import show_qt_profile_selector
 
-            selection_result = show_qt_profile_selector(
-                url, domain, browser_profiles, allow_remember=not is_local_file
-            )
+            selection_result = show_qt_profile_selector(url, domain, browser_profiles)
 
             if selection_result:
                 selected_profile_key, domain_pattern, save_choice = selection_result

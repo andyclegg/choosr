@@ -390,6 +390,67 @@ class TestUrlHandling:
                 "chrome-default", url="http://localhost:3000/app"
             )
 
+    def test_handle_url_local_file_shows_gui_with_remember(self):
+        """Test that local file URLs show GUI with allow_remember=True and file://* pattern."""
+        config = {
+            "browser_profiles": {
+                "chrome-default": {
+                    "browser": "chrome",
+                    "profile_id": "default",
+                    "name": "Default",
+                }
+            },
+            "urls": [],
+        }
+
+        with (
+            patch.object(choosr, "load_config", return_value=config),
+            patch(
+                "choosr.qt_interface.show_qt_profile_selector",
+                return_value=("chrome-default", "file://*", True),
+            ) as mock_gui,
+            patch.object(choosr, "save_url_match") as mock_save,
+            patch.object(choosr, "launch_browser_by_config_key"),
+        ):
+            # Test both file:// URL and absolute path (what KDE actually passes)
+            for url in ["file:///home/user/test.html", "/home/user/test.html"]:
+                mock_gui.reset_mock()
+                mock_save.reset_mock()
+                choosr.handle_url(url)
+                _url, domain, _profiles = mock_gui.call_args[0]
+                assert domain == "file://*", (
+                    f"Expected file://* for {url!r}, got {domain!r}"
+                )
+                kwargs = mock_gui.call_args[1]
+                assert kwargs.get("allow_remember", True) is True
+                mock_save.assert_called_once_with("file://*", "chrome-default")
+
+    def test_handle_url_local_file_saved_pattern(self):
+        """Test that a saved file://* pattern auto-launches local files without GUI."""
+        config = {
+            "browser_profiles": {
+                "chrome-default": {
+                    "browser": "chrome",
+                    "profile_id": "default",
+                    "name": "Default",
+                }
+            },
+            "urls": [{"match": "file://*", "profile": "chrome-default"}],
+        }
+
+        with (
+            patch.object(choosr, "load_config", return_value=config),
+            patch("choosr.qt_interface.show_qt_profile_selector") as mock_gui,
+            patch.object(choosr, "launch_browser_by_config_key") as mock_launch,
+        ):
+            # Test both file:// URL and absolute path (what KDE actually passes)
+            for url in ["file:///home/user/report.html", "/home/user/report.html"]:
+                mock_gui.reset_mock()
+                mock_launch.reset_mock()
+                choosr.handle_url(url)
+                mock_gui.assert_not_called()
+                mock_launch.assert_called_once_with("chrome-default", url=url)
+
     def test_handle_url_domain_extraction(self):
         """Test URL domain extraction."""
         config = {
