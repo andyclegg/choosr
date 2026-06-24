@@ -82,9 +82,6 @@ EOF
     echo "=================================================="
     echo -e "${GREEN}Installation completed successfully!${NC}"
     echo "=================================================="
-    echo
-    echo "Verify: xdg-settings get default-web-browser"
-    echo "Test:   choosr https://example.com"
 }
 
 main "$@"
