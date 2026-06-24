@@ -60,6 +60,15 @@ EOF
         update-desktop-database "$apps_dir" 2>/dev/null || true
     fi
 
+    # Populate browser profiles
+    print_info "Scanning for browser profiles..."
+    if choosr --rescan-browsers; then
+        print_success "Browser profiles discovered"
+    else
+        print_warning "Could not scan browser profiles automatically"
+        print_info "Run manually: choosr --rescan-browsers"
+    fi
+
     # Set as default browser
     print_info "Setting choosr as default browser..."
     if xdg-settings set default-web-browser choosr.desktop; then
