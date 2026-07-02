@@ -81,7 +81,10 @@ class ProfileCache:
             cache_file: Path to cache file. Defaults to ~/.choosr-cache.json
         """
         if cache_file is None:
-            cache_file = os.path.expanduser("~/.choosr-cache.json")
+            xdg_cache_home = os.environ.get(
+                "XDG_CACHE_HOME", os.path.expanduser("~/.cache")
+            )
+            cache_file = os.path.join(xdg_cache_home, "choosr", "cache.json")
         self.cache_file = cache_file
         self._cache_data = {}
         self._load_cache()

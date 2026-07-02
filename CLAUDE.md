@@ -45,6 +45,8 @@ uv run ruff check .         # Check code style and errors
 uv run ruff format .        # Format code
 ```
 
+Always run ruff check/format commands before finishing a task - pre-commit enforces this for commits
+
 ## Architecture
 
 ### Core Components
@@ -52,7 +54,7 @@ uv run ruff format .        # Format code
 **Main Entry Point (`choosr.py`):**
 - Application entry point with command-line argument parsing
 - Handles URL routing and profile selection logic
-- Manages YAML configuration file at `~/.choosr.yaml`
+- Manages YAML configuration file at `$XDG_CONFIG_HOME/choosr/config.yaml` (default `~/.config/choosr/config.yaml`)
 - Coordinates between browser implementations and Qt interface
 
 **Browser Abstraction (`browser.py`):**
@@ -81,7 +83,7 @@ uv run ruff format .        # Format code
 
 **Plugin Architecture:** Browser implementations extend the abstract `Browser` class, making it easy to add support for new browsers.
 
-**Configuration Management:** Uses YAML for user configuration stored at `~/.choosr.yaml` with automatic profile discovery and URL pattern matching.
+**Configuration Management:** Uses YAML for user configuration stored at `$XDG_CONFIG_HOME/choosr/config.yaml` (default `~/.config/choosr/config.yaml`) with automatic profile discovery and URL pattern matching.
 
 **GUI Integration:** Qt/QML interface is cleanly separated from core logic and can be replaced with other UI frameworks.
 
@@ -93,7 +95,7 @@ uv run ruff format .        # Format code
 - Creates launcher script in `~/.local/share/choosr/choosr-launcher`
 - Installs desktop file to `~/.local/share/applications/choosr.desktop`
 
-**User config file location:** `~/.choosr.yaml`
+**User config file location:** `$XDG_CONFIG_HOME/choosr/config.yaml` (default `~/.config/choosr/config.yaml`)
 
 The application auto-discovers browser profiles and automatically creates the config file when first run.
 

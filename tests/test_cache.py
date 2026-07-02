@@ -14,7 +14,10 @@ class TestProfileCache:
     def test_init_creates_cache_file_path(self):
         """Test cache initialization with default file path."""
         cache = ProfileCache()
-        expected_path = os.path.expanduser("~/.choosr-cache.json")
+        xdg_cache_home = os.environ.get(
+            "XDG_CACHE_HOME", os.path.expanduser("~/.cache")
+        )
+        expected_path = os.path.join(xdg_cache_home, "choosr", "cache.json")
         assert cache.cache_file == expected_path
 
     def test_init_custom_cache_file(self):

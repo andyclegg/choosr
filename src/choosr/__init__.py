@@ -188,13 +188,18 @@ def launch_browser_by_config_key(config_key, url=None):
     return success
 
 
+def _get_config_path():
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    return os.path.join(xdg_config_home, "choosr", "config.yaml")
+
+
 def load_config():
     """Load choosr configuration from YAML file, creating it if it doesn't exist."""
     from .logging_config import get_logger
 
     logger = get_logger()
 
-    config_path = os.path.expanduser("~/.choosr.yaml")
+    config_path = _get_config_path()
 
     if not os.path.exists(config_path):
         # Auto-create config file if it doesn't exist
@@ -249,7 +254,7 @@ def _handle_yaml_write_error(config_path, operation_description):
 
 def save_url_match(domain, profile_name):
     """Save a new URL match to the config file."""
-    config_path = os.path.expanduser("~/.choosr.yaml")
+    config_path = _get_config_path()
     config = load_config()
 
     # Add new URL match
@@ -276,10 +281,8 @@ def get_all_browser_profiles():
 
 def _create_initial_config(config_path):
     """Create initial config file with discovered browser profiles."""
-    # Get all profiles from all available browsers
     all_profiles = get_all_browser_profiles()
 
-    # Create config structure with unique keys for each profile
     config = {"browser_profiles": {}, "urls": []}
 
     for profile in all_profiles:
@@ -296,6 +299,7 @@ def _create_initial_config(config_path):
 
     @_handle_yaml_write_error(config_path, "configuration")
     def write_config():
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
 
@@ -354,7 +358,7 @@ def handle_url(url):
 
 def rescan_browsers():
     """Rescan browsers, update profiles, and clean up invalid URL entries."""
-    config_path = os.path.expanduser("~/.choosr.yaml")
+    config_path = _get_config_path()
     config = load_config()
 
     # Clear profile caches to force fresh discovery
