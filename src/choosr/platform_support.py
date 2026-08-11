@@ -16,27 +16,22 @@ class PlatformSupport(ABC):
     @abstractmethod
     def get_chrome_executable(self) -> str:
         """Return path to Chrome executable."""
-        pass
 
     @abstractmethod
     def get_chrome_config_dir(self) -> Path:
         """Return path to Chrome configuration directory."""
-        pass
 
     @abstractmethod
     def get_firefox_executable(self) -> str:
         """Return path to Firefox executable."""
-        pass
 
     @abstractmethod
     def get_firefox_config_dir(self) -> Path:
         """Return path to Firefox configuration directory."""
-        pass
 
     @abstractmethod
     def get_cache_dir(self) -> Path:
         """Return path to choosr cache directory."""
-        pass
 
 
 class LinuxPlatform(PlatformSupport):

@@ -1,11 +1,11 @@
 """Tests for main choosr functionality."""
 
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import MagicMock, mock_open, patch
+
 import yaml
 
-
 import choosr
-from choosr.browser import Profile, BrowserRegistry
+from choosr.browser import BrowserRegistry, Profile
 
 
 class TestConfigurationHandling:

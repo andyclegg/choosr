@@ -1,11 +1,10 @@
 """Tests for Chrome browser implementation."""
 
 import json
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
-
-from choosr.chrome import ChromeBrowser
 from choosr.browser import Profile, ProfileIcon
+from choosr.chrome import ChromeBrowser
 
 
 class TestChromeBrowser:
@@ -356,8 +355,8 @@ class TestChromeLaunchErrorHandling:
         mock_run = mocker.patch("choosr.chrome.subprocess.run")
         mock_run.return_value.returncode = 0
 
-        from choosr.chrome import ChromeBrowser
         from choosr.browser import Profile
+        from choosr.chrome import ChromeBrowser
 
         browser = ChromeBrowser()
         profile = Profile(id="Default", name="Default", browser="chrome")
@@ -371,8 +370,8 @@ class TestChromeLaunchErrorHandling:
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = "Error: browser crashed"
 
-        from choosr.chrome import ChromeBrowser
         from choosr.browser import Profile
+        from choosr.chrome import ChromeBrowser
 
         browser = ChromeBrowser()
         profile = Profile(id="Default", name="Default", browser="chrome")
@@ -388,8 +387,8 @@ class TestChromeLaunchErrorHandling:
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = "browser crashed"
 
-        from choosr.chrome import ChromeBrowser
         from choosr.browser import Profile
+        from choosr.chrome import ChromeBrowser
         from choosr.logging_config import setup_logging
 
         setup_logging(debug=True)

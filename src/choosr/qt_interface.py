@@ -8,13 +8,13 @@ Requires PySide6 as a hard dependency.
 
 import os
 import sys
-from typing import List, Optional, Tuple, Dict, Any
+from typing import Any
 
-from PySide6.QtCore import QObject, Signal, Slot, QUrl, QTimer, Qt, QEventLoop
+from PySide6.QtCore import QEventLoop, QObject, Qt, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication, QIcon, QPalette
 from PySide6.QtQuick import QQuickView
 
-from .browser import browser_registry, Profile
+from .browser import Profile, browser_registry
 
 
 def show_error_dialog(title: str, message: str) -> None:
@@ -35,7 +35,7 @@ def show_error_dialog(title: str, message: str) -> None:
     logger.error("%s: %s", title, message)
 
     try:
-        from PySide6.QtWidgets import QMessageBox, QApplication
+        from PySide6.QtWidgets import QApplication, QMessageBox
 
         app = QApplication.instance()
         if app is None:
@@ -46,8 +46,7 @@ def show_error_dialog(title: str, message: str) -> None:
         msg_box.setWindowTitle(title)
         msg_box.setText(message)
         msg_box.exec()
-    except Exception as e:
-        # If Qt fails, at least we logged the error
+    except Exception as e:  # noqa: BLE001 - last-resort fallback, Qt can fail in many ways
         logger.warning("Could not show error dialog: %s", e)
 
 
@@ -114,9 +113,9 @@ class ProfileSelectorController(QObject):
         self,
         url: str,
         domain: str,
-        profiles: Dict[str, Any],
+        profiles: dict[str, Any],
         allow_remember: bool = True,
-    ) -> Optional[Tuple[str, str, bool]]:
+    ) -> tuple[str, str, bool] | None:
         """
         Show the Qt/QML profile selector interface.
 
@@ -232,7 +231,7 @@ class ProfileSelectorController(QObject):
 
         return self._result
 
-    def _prepare_profile_data(self, profiles: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _prepare_profile_data(self, profiles: dict[str, Any]) -> list[dict[str, Any]]:
         """Convert profile configurations to browser-grouped QML-friendly format with icons."""
         # Group profiles by browser
         browser_groups = {}

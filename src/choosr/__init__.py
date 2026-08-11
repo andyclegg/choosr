@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 import argparse
 import fnmatch
 import os
+import re
 import sys
 
 import tldextract
@@ -101,10 +101,8 @@ def _is_valid_glob_pattern(pattern: str) -> bool:
             elif char == "]" and bracket_depth > 0:
                 bracket_depth -= 1
             i += 1
-        if bracket_depth != 0:
-            return False
-        return True
-    except Exception:
+        return bracket_depth == 0
+    except re.error:
         return False
 
 
@@ -310,7 +308,7 @@ def handle_url(url):
     """Handle URL opening with profile selection."""
     config = load_config()
 
-    if url.startswith("file://") or url.startswith("/"):
+    if url.startswith(("file://", "/")):
         domain = "file://*"
     else:
         parsed = tldextract.extract(url)
