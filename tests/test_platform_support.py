@@ -11,7 +11,7 @@ class TestGetPlatform:
     def test_linux_returns_linux_platform(self):
         """Linux platform should return LinuxPlatform."""
         with patch.object(sys, "platform", "linux"):
-            from choosr.platform_support import get_platform, LinuxPlatform
+            from choosr.platform_support import LinuxPlatform, get_platform
 
             platform = get_platform()
             assert isinstance(platform, LinuxPlatform)
@@ -20,7 +20,8 @@ class TestGetPlatform:
         """macOS platform should raise NotImplementedError."""
         with patch.object(sys, "platform", "darwin"):
             import importlib
-            import choosr.platform_support as platform_support
+
+            from choosr import platform_support
 
             importlib.reload(platform_support)
 
@@ -31,7 +32,8 @@ class TestGetPlatform:
         """Windows platform should raise NotImplementedError."""
         with patch.object(sys, "platform", "win32"):
             import importlib
-            import choosr.platform_support as platform_support
+
+            from choosr import platform_support
 
             importlib.reload(platform_support)
 

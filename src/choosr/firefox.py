@@ -9,7 +9,7 @@ and launching with Firefox-specific command-line arguments.
 import configparser
 import os
 import subprocess
-from typing import List, Optional
+from typing import ClassVar
 
 from .browser import Browser, Profile, ProfileIcon
 from .platform_support import get_current_platform
@@ -22,7 +22,7 @@ class FirefoxBrowser(Browser):
         super().__init__()
 
     # Firefox profile colors based on Firefox branding
-    PROFILE_COLORS = [
+    PROFILE_COLORS: ClassVar[list[str]] = [
         "#FF6611",  # Firefox orange
         "#0060DF",  # Firefox blue
         "#20123A",  # Firefox dark purple
@@ -48,7 +48,7 @@ class FirefoxBrowser(Browser):
         """Return the path to the Firefox executable."""
         return get_current_platform().get_firefox_executable()
 
-    def discover_profiles(self) -> List[Profile]:
+    def discover_profiles(self) -> list[Profile]:
         """
         Discover all available Firefox profiles.
 
@@ -86,7 +86,7 @@ class FirefoxBrowser(Browser):
             is_private=True,
         )
 
-    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
+    def launch(self, profile: Profile, url: str | None = None) -> bool:
         """
         Launch Firefox with the specified profile and optional URL.
 
@@ -115,7 +115,7 @@ class FirefoxBrowser(Browser):
 
         logger.debug("Launching Firefox: %s", " ".join(command))
 
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             logger.error(
@@ -154,7 +154,7 @@ class FirefoxBrowser(Browser):
         """
         return os.path.join(self.get_config_directory(), "profiles.ini")
 
-    def get_source_files(self) -> List[str]:
+    def get_source_files(self) -> list[str]:
         """
         Return list of files that Firefox profile discovery depends on.
 
@@ -195,7 +195,7 @@ class FirefoxBrowser(Browser):
         except (configparser.Error, OSError):
             return False
 
-    def get_default_profile(self) -> Optional[Profile]:
+    def get_default_profile(self) -> Profile | None:
         """
         Get the default Firefox profile.
 
@@ -225,7 +225,7 @@ class FirefoxBrowser(Browser):
         except (configparser.Error, OSError):
             return None
 
-    def get_browser_icon(self) -> Optional[str]:
+    def get_browser_icon(self) -> str | None:
         """
         Get the Firefox browser icon.
 
@@ -243,7 +243,7 @@ class FirefoxBrowser(Browser):
                 return path
         return None
 
-    def get_private_mode_icon(self) -> Optional[str]:
+    def get_private_mode_icon(self) -> str | None:
         """
         Get the Firefox private browsing mode icon.
 

@@ -51,7 +51,6 @@ def get_logger() -> logging.Logger:
     Returns:
         The configured logger instance.
     """
-    global _logger
     if _logger is None:
         setup_logging()
     return _logger

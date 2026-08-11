@@ -10,19 +10,18 @@ import json
 import os
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Optional
+from dataclasses import asdict, dataclass
 
 
 @dataclass
 class ProfileIcon:
     """Represents a profile icon with color and avatar information."""
 
-    avatar_icon: Optional[str] = None  # Icon identifier/path
-    background_color: Optional[str] = None  # Hex color code
-    text_color: Optional[str] = None  # Hex color for text
-    icon_data: Optional[bytes] = None  # Raw icon data if available
-    icon_file_path: Optional[str] = (
+    avatar_icon: str | None = None  # Icon identifier/path
+    background_color: str | None = None  # Hex color code
+    text_color: str | None = None  # Hex color for text
+    icon_data: bytes | None = None  # Raw icon data if available
+    icon_file_path: str | None = (
         None  # Path to actual icon file (e.g., profile picture)
     )
 
@@ -33,12 +32,12 @@ class ProfileIcon:
         if self.text_color is None:
             self.text_color = "#FFFFFF"  # Default white
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert ProfileIcon to dictionary for serialization."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "ProfileIcon":
+    def from_dict(cls, data: dict) -> "ProfileIcon":
         """Create ProfileIcon from dictionary."""
         return cls(**data)
 
@@ -51,10 +50,10 @@ class Profile:
     name: str  # User-friendly display name
     browser: str  # Browser type (chrome, firefox, etc.)
     is_private: bool = False  # Whether this is a private/incognito profile
-    email: Optional[str] = None  # Associated email address
-    icon: Optional[ProfileIcon] = None  # Profile icon information
+    email: str | None = None  # Associated email address
+    icon: ProfileIcon | None = None  # Profile icon information
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert Profile to dictionary for serialization."""
         data = asdict(self)
         if self.icon:
@@ -62,7 +61,7 @@ class Profile:
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "Profile":
+    def from_dict(cls, data: dict) -> "Profile":
         """Create Profile from dictionary."""
         icon_data = data.pop("icon", None)
         profile = cls(**data)
@@ -74,7 +73,7 @@ class Profile:
 class ProfileCache:
     """Caches browser profile data to improve performance."""
 
-    def __init__(self, cache_file: str = None):
+    def __init__(self, cache_file: str | None = None):
         """Initialize profile cache.
 
         Args:
@@ -115,8 +114,8 @@ class ProfileCache:
             logger.warning("Failed to write profile cache: %s", e)
 
     def get_cached_profiles(
-        self, browser_name: str, source_files: List[str]
-    ) -> Optional[List[Profile]]:
+        self, browser_name: str, source_files: list[str]
+    ) -> list[Profile] | None:
         """Get cached profiles if cache is still valid.
 
         Args:
@@ -160,7 +159,7 @@ class ProfileCache:
             return None
 
     def cache_profiles(
-        self, browser_name: str, profiles: List[Profile], source_files: List[str]
+        self, browser_name: str, profiles: list[Profile], source_files: list[str]
     ) -> None:
         """Cache profiles for a browser.
 
@@ -205,7 +204,7 @@ class ProfileCache:
         self._cache_data = {}
         self._save_cache()
 
-    def get_cache_stats(self) -> Dict:
+    def get_cache_stats(self) -> dict:
         """Get cache statistics for debugging."""
         stats = {}
         for key, value in self._cache_data.items():
@@ -229,22 +228,19 @@ class Browser(ABC):
     @abstractmethod
     def name(self) -> str:
         """Return the browser name (e.g., 'chrome', 'firefox')."""
-        pass
 
     @property
     @abstractmethod
     def display_name(self) -> str:
         """Return the user-friendly browser name (e.g., 'Google Chrome', 'Mozilla Firefox')."""
-        pass
 
     @property
     @abstractmethod
     def executable_path(self) -> str:
         """Return the path to the browser executable."""
-        pass
 
     @abstractmethod
-    def discover_profiles(self) -> List[Profile]:
+    def discover_profiles(self) -> list[Profile]:
         """
         Discover all available profiles for this browser.
 
@@ -252,7 +248,6 @@ class Browser(ABC):
             List of Profile objects representing available profiles.
             Should not include the private mode profile.
         """
-        pass
 
     @abstractmethod
     def get_private_mode_profile(self) -> Profile:
@@ -262,10 +257,9 @@ class Browser(ABC):
         Returns:
             Profile object representing private browsing mode.
         """
-        pass
 
     @abstractmethod
-    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
+    def launch(self, profile: Profile, url: str | None = None) -> bool:
         """
         Launch the browser with the specified profile and optional URL.
 
@@ -276,7 +270,6 @@ class Browser(ABC):
         Returns:
             True if launch succeeded, False otherwise.
         """
-        pass
 
     @abstractmethod
     def is_available(self) -> bool:
@@ -286,27 +279,24 @@ class Browser(ABC):
         Returns:
             True if the browser executable exists and is accessible.
         """
-        pass
 
     @abstractmethod
-    def get_browser_icon(self) -> Optional[str]:
+    def get_browser_icon(self) -> str | None:
         """
         Get the browser's main icon.
 
         Returns:
             Path to browser icon file, or None if not available.
         """
-        pass
 
     @abstractmethod
-    def get_private_mode_icon(self) -> Optional[str]:
+    def get_private_mode_icon(self) -> str | None:
         """
         Get the browser's private/incognito mode icon.
 
         Returns:
             Path to private mode icon file, or None if not available.
         """
-        pass
 
     @abstractmethod
     def get_profile_icon(self, profile: Profile) -> ProfileIcon:
@@ -319,10 +309,9 @@ class Browser(ABC):
         Returns:
             ProfileIcon with color and avatar information.
         """
-        pass
 
     @abstractmethod
-    def get_source_files(self) -> List[str]:
+    def get_source_files(self) -> list[str]:
         """
         Return list of files that profile discovery depends on.
 
@@ -332,9 +321,8 @@ class Browser(ABC):
         Returns:
             List of file paths that profiles depend on.
         """
-        pass
 
-    def cached_discover_profiles(self) -> List[Profile]:
+    def cached_discover_profiles(self) -> list[Profile]:
         """
         Discover profiles using cache when possible.
 
@@ -359,7 +347,7 @@ class Browser(ABC):
 
         return fresh_profiles
 
-    def get_all_profiles(self) -> List[Profile]:
+    def get_all_profiles(self) -> list[Profile]:
         """
         Get all profiles including the private mode profile.
 
@@ -372,7 +360,7 @@ class Browser(ABC):
         """Invalidate cached profile data for this browser."""
         self._cache.invalidate_browser(self.name)
 
-    def get_profile_by_id(self, profile_id: str) -> Optional[Profile]:
+    def get_profile_by_id(self, profile_id: str) -> Profile | None:
         """
         Find a profile by its ID.
 
@@ -387,7 +375,7 @@ class Browser(ABC):
                 return profile
         return None
 
-    def get_profile_by_name(self, profile_name: str) -> Optional[Profile]:
+    def get_profile_by_name(self, profile_name: str) -> Profile | None:
         """
         Find a profile by its display name.
 
@@ -407,30 +395,30 @@ class BrowserRegistry:
     """Registry for managing multiple browser implementations."""
 
     def __init__(self):
-        self._browsers: Dict[str, Browser] = {}
+        self._browsers: dict[str, Browser] = {}
 
     def register(self, browser: Browser) -> None:
         """Register a browser implementation."""
         self._browsers[browser.name] = browser
 
-    def get_browser(self, name: str) -> Optional[Browser]:
+    def get_browser(self, name: str) -> Browser | None:
         """Get a browser by name."""
         return self._browsers.get(name)
 
-    def get_available_browsers(self) -> List[Browser]:
+    def get_available_browsers(self) -> list[Browser]:
         """Get all available browsers on the system."""
         return [
             browser for browser in self._browsers.values() if browser.is_available()
         ]
 
-    def get_all_profiles(self) -> List[Profile]:
+    def get_all_profiles(self) -> list[Profile]:
         """Get all profiles from all available browsers."""
         profiles = []
         for browser in self.get_available_browsers():
             profiles.extend(browser.get_all_profiles())
         return profiles
 
-    def discover_all_profiles(self) -> Dict[str, List[Profile]]:
+    def discover_all_profiles(self) -> dict[str, list[Profile]]:
         """
         Discover profiles from all available browsers.
 
@@ -447,7 +435,7 @@ class BrowserRegistry:
         for browser in self._browsers.values():
             browser.invalidate_cache()
 
-    def get_cache_stats(self) -> Dict:
+    def get_cache_stats(self) -> dict:
         """Get cache statistics from all browsers."""
         if not self._browsers:
             return {}

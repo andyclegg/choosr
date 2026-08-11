@@ -1,7 +1,8 @@
 """Tests for browser abstraction layer."""
 
 import tempfile
-from choosr.browser import Profile, ProfileIcon, BrowserRegistry, Browser, ProfileCache
+
+from choosr.browser import Browser, BrowserRegistry, Profile, ProfileCache, ProfileIcon
 
 
 class MockBrowser(Browser):
@@ -9,8 +10,8 @@ class MockBrowser(Browser):
 
     def __init__(self, name="mock", display_name="Mock Browser", available=True):
         # Use a temporary cache file for testing
-        self._temp_cache_file = tempfile.NamedTemporaryFile(delete=False)
-        self._temp_cache_file.close()
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self._temp_cache_file = f
 
         # Initialize parent with cache
         super().__init__()

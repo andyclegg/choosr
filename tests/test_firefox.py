@@ -3,8 +3,8 @@
 import configparser
 from unittest.mock import patch
 
-from choosr.firefox import FirefoxBrowser
 from choosr.browser import Profile, ProfileIcon
+from choosr.firefox import FirefoxBrowser
 
 
 class TestFirefoxPlatformAbstraction:
@@ -416,8 +416,8 @@ class TestFirefoxLaunchErrorHandling:
         mock_run = mocker.patch("choosr.firefox.subprocess.run")
         mock_run.return_value.returncode = 0
 
-        from choosr.firefox import FirefoxBrowser
         from choosr.browser import Profile
+        from choosr.firefox import FirefoxBrowser
 
         browser = FirefoxBrowser()
         profile = Profile(id="default", name="default", browser="firefox")
@@ -431,8 +431,8 @@ class TestFirefoxLaunchErrorHandling:
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = "Error: browser crashed"
 
-        from choosr.firefox import FirefoxBrowser
         from choosr.browser import Profile
+        from choosr.firefox import FirefoxBrowser
 
         browser = FirefoxBrowser()
         profile = Profile(id="default", name="default", browser="firefox")

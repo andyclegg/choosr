@@ -8,7 +8,7 @@ for Google Chrome, based on the existing Chrome-specific code in choosr.py.
 import json
 import os
 import subprocess
-from typing import List, Optional
+from typing import ClassVar
 
 from .browser import Browser, Profile, ProfileIcon
 from .platform_support import get_current_platform
@@ -21,7 +21,7 @@ class ChromeBrowser(Browser):
         super().__init__()
 
     # Chrome avatar icon color mapping
-    AVATAR_COLORS = {
+    AVATAR_COLORS: ClassVar[dict[str, str]] = {
         "chrome-avatar-generic": "#4285F4",
         "chrome://theme/IDR_PROFILE_AVATAR_26": "#546E7A",
         "chrome://theme/IDR_PROFILE_AVATAR_0": "#EA4335",
@@ -67,7 +67,7 @@ class ChromeBrowser(Browser):
         """Return the path to the Chrome executable."""
         return get_current_platform().get_chrome_executable()
 
-    def discover_profiles(self) -> List[Profile]:
+    def discover_profiles(self) -> list[Profile]:
         """
         Discover all available Chrome profiles.
 
@@ -130,7 +130,7 @@ class ChromeBrowser(Browser):
             is_private=True,
         )
 
-    def launch(self, profile: Profile, url: Optional[str] = None) -> bool:
+    def launch(self, profile: Profile, url: str | None = None) -> bool:
         """
         Launch Chrome with the specified profile and optional URL.
 
@@ -158,7 +158,7 @@ class ChromeBrowser(Browser):
 
         logger.debug("Launching Chrome: %s", " ".join(command))
 
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             logger.error(
@@ -197,7 +197,7 @@ class ChromeBrowser(Browser):
         """
         return os.path.join(self.get_config_directory(), "Local State")
 
-    def get_source_files(self) -> List[str]:
+    def get_source_files(self) -> list[str]:
         """
         Return list of files that Chrome profile discovery depends on.
 
@@ -222,7 +222,7 @@ class ChromeBrowser(Browser):
         profile_path = os.path.join(self.get_config_directory(), profile_id)
         return os.path.isdir(profile_path)
 
-    def get_profile_path(self, profile_id: str) -> Optional[str]:
+    def get_profile_path(self, profile_id: str) -> str | None:
         """
         Get the full filesystem path for a profile.
 
@@ -237,7 +237,7 @@ class ChromeBrowser(Browser):
 
         return os.path.join(self.get_config_directory(), profile_id)
 
-    def get_browser_icon(self) -> Optional[str]:
+    def get_browser_icon(self) -> str | None:
         """
         Get the Chrome browser icon.
 
@@ -255,7 +255,7 @@ class ChromeBrowser(Browser):
                 return path
         return None
 
-    def get_private_mode_icon(self) -> Optional[str]:
+    def get_private_mode_icon(self) -> str | None:
         """
         Get the Chrome incognito mode icon.
 
@@ -362,7 +362,7 @@ class ChromeBrowser(Browser):
 
     def _get_profile_picture_path(
         self, profile_info: dict, profile_id: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Get the path to the profile picture file.
 
