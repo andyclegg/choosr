@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "tldextract>=5.3.1",
+    "tldextract>=5.3.2",
     "pyyaml>=6.0.2",
     "pyside6>=6.11.1",
 ]
